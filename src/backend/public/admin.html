@@ -142,7 +142,7 @@
     }
     .badge-pending { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,0.25); }
     .badge-completed, .badge-active, .badge-approved { background: var(--emerald-bg); color: var(--emerald); border: 1px solid rgba(16,185,129,0.25); }
-    .badge-rejected, .badge-banned { background: var(--ruby-bg); color: var(--ruby); border: 1px solid rgba(239,68,68,0.25); }
+    .badge-rejected, .badge-failed, .badge-banned { background: var(--ruby-bg); color: var(--ruby); border: 1px solid rgba(239,68,68,0.25); }
     .badge-suspended { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
     .badge-crypto { background: rgba(245,197,66,0.12); color: var(--gold); border: 1px solid var(--border-gold); }
 
@@ -371,7 +371,9 @@
                 <select id="withdrawal-filter" class="input" style="width: 140px; padding: 6px 10px;" onchange="renderWithdrawals()">
                   <option value="all">All Status</option>
                   <option value="pending" selected>Pending</option>
+                  <option value="approved">Approved (not paid)</option>
                   <option value="completed">Completed</option>
+                  <option value="failed">Payout Failed</option>
                   <option value="rejected">Rejected</option>
                 </select>
               </div>
@@ -749,7 +751,7 @@
       bDep.innerText = pendingDep;
       bDep.style.display = pendingDep > 0 ? 'inline-block' : 'none';
 
-      const pendingWth = withdrawalsData.filter(w => w.status === 'pending').length;
+      const pendingWth = withdrawalsData.filter(w => w.status === 'pending' || w.status === 'approved').length;
       const bWth = document.getElementById('badge-withdrawals');
       bWth.innerText = pendingWth;
       bWth.style.display = pendingWth > 0 ? 'inline-block' : 'none';
@@ -861,16 +863,20 @@
 
       tbody.innerHTML = filtered.map(w => {
         const statusBadge = `<span class="badge badge-${w.status}">${w.status.toUpperCase()}</span>`;
-        const actions = w.status === 'pending' ? `
-          <button class="btn btn-emerald btn-sm" onclick="approveWithdrawal('${w.transactionId}')">Approve Payout</button>
-          <button class="btn btn-ruby btn-sm" onclick="rejectWithdrawal('${w.transactionId}')">Reject & Refund</button>
+        // pending: not paid yet, can be paid, failed or rejected.
+        // approved: approved earlier but the payment was never recorded; it still needs Mark Paid or Payout Failed.
+        const open = w.status === 'pending' || w.status === 'approved';
+        const actions = open ? `
+          <button class="btn btn-emerald btn-sm" onclick="markWithdrawalPaid('${w.transactionId}')">Mark Paid</button>
+          <button class="btn btn-ruby btn-sm" onclick="markWithdrawalPayoutFailed('${w.transactionId}')">Payout Failed</button>
+          ${w.status === 'pending' ? `<button class="btn btn-ruby btn-sm" onclick="rejectWithdrawal('${w.transactionId}')">Reject & Refund</button>` : ''}
         ` : `<span style="color: var(--text-dim); font-size: 12px;">Processed</span>`;
 
         return `
           <tr>
             <td class="mono font-bold">${w.userPhone || w.userId}</td>
-            <td><span class="badge badge-crypto">${w.method}</span></td>
-            <td class="mono" style="color: var(--gold);">${w.accountNumber || '-'} (${w.accountTitle || ''})</td>
+            <td><span class="badge badge-crypto">${w.gateway || '-'}</span></td>
+            <td class="mono" style="color: var(--gold);">${w.accountPhone || '-'} (${w.accountTitle || ''})</td>
             <td class="mono font-bold" style="color: var(--ruby);">Rs ${Number(w.amountPkr).toLocaleString()}</td>
             <td style="font-size: 12px;">${new Date(w.createdAt).toLocaleString()}</td>
             <td>${statusBadge}</td>
@@ -880,15 +886,44 @@
       }).join('');
     }
 
-    async function approveWithdrawal(txId) {
-      if (!confirm('Mark withdrawal as paid and approved?')) return;
+    // Manual payout: send the money yourself (EasyPaisa / JazzCash / bank), then record it here.
+    async function markWithdrawalPaid(txId) {
+      const w = withdrawalsData.find(x => x.transactionId === txId);
+      const amount = w ? `Rs ${Number(w.amountPkr).toLocaleString()} to ${w.gateway || ''} ${w.accountPhone || w.userPhone || 'player'}` : 'this withdrawal';
+      const input = prompt(`Enter the payment reference / TRX ID of the transfer you sent (${amount}):`);
+      if (input === null) return;
+      const payoutRef = input.trim();
+      if (payoutRef.length < 4) {
+        alert('A payment reference (TRX ID) of at least 4 characters is required.');
+        return;
+      }
+      if (!confirm(`Confirm ${amount} was paid with reference "${payoutRef}"? This completes the withdrawal and cannot be undone.`)) return;
       try {
-        const res = await apiRequest(`/admin/withdrawals/${txId}/approve`, 'POST');
+        const res = await apiRequest(`/admin/withdrawals/${txId}/payout-success`, 'POST', { payoutRef });
         if (res.ok) {
-          alert('Withdrawal marked as approved and completed!');
+          alert(res.data?.replayed ? 'This withdrawal was already completed.' : `Withdrawal completed. Reference: ${payoutRef}`);
           loadWithdrawals();
         } else {
-          alert(res.error?.message || 'Failed to approve withdrawal.');
+          alert(res.error?.message || 'Failed to complete withdrawal.');
+        }
+      } catch (e) { alert(e.message); }
+    }
+
+    async function markWithdrawalPayoutFailed(txId) {
+      const input = prompt('Why did the payment fail? (The amount will be refunded back to the player wallet)', 'Transfer failed');
+      if (input === null) return;
+      const reason = input.trim();
+      if (!reason) {
+        alert('A reason is required.');
+        return;
+      }
+      try {
+        const res = await apiRequest(`/admin/withdrawals/${txId}/payout-failure`, 'POST', { reason });
+        if (res.ok) {
+          alert('Payout marked as failed. Balance has been refunded to player.');
+          loadWithdrawals();
+        } else {
+          alert(res.error?.message || 'Failed to mark payout as failed.');
         }
       } catch (e) { alert(e.message); }
     }
