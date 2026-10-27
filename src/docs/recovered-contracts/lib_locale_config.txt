@@ -1,0 +1,5 @@
+en=English
+tr=Turkish
+hi=Hindi
+ur=Urdu (RTL)
+ar=Arabic (RTL)

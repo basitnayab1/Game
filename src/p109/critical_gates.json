@@ -1,0 +1,19 @@
+{
+  "part": 109,
+  "name": "Critical Integration Risk Register",
+  "severity_levels": ["CRITICAL", "HIGH", "MEDIUM", "LOW"],
+  "critical_gates": [
+    "canonical_flutter_project",
+    "canonical_backend_project",
+    "financial_server_authority",
+    "provider_webhook_verification",
+    "idempotency",
+    "secret_exclusion",
+    "migration_integrity",
+    "security_review",
+    "merged_build_and_tests",
+    "external_legal_provider_readiness"
+  ],
+  "final_languages": ["en", "tr", "hi", "ur", "ar"],
+  "final_label_requires_merged_repository_verification": true
+}

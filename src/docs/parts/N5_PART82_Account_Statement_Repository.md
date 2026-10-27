@@ -1,0 +1,1 @@
+Part 82 — Account Statement Repository Contract. Defines server-side date-range activity summary and separate deposit/withdrawal history. No round-by-round player history is required. Financial totals must be calculated from authoritative records.

@@ -1,0 +1,2 @@
+import '../../../core/networking/player_api_client.dart';
+class NotificationsApi { final PlayerApiClient client; NotificationsApi(this.client); Future<List<Map<String,dynamic>>> list() async { final r=await client.get('/notifications'); final data=Map<String,dynamic>.from(r.data as Map)['data'] as List; return data.map((e)=>Map<String,dynamic>.from(e as Map)).toList(); } Future<void> markRead(String id) async { await client.post('/notifications/$id/read'); } Future<void> markAllRead() async { await client.post('/notifications/read-all'); } }

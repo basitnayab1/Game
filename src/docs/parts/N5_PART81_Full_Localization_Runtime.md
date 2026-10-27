@@ -1,0 +1,1 @@
+Part 81 — Full Localization Runtime. Defines the final eight-language runtime list and RTL handling. Translation files should be integrated through Flutter gen-l10n/ARB resources; no translation API is required for fixed app UI text.

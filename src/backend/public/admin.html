@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N5 Game — Admin Operations Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #070A0F;
+      --card: #0D131F;
+      --card-hover: #121A2B;
+      --border: #1E293B;
+      --border-gold: rgba(245, 197, 66, 0.35);
+      --gold: #F5C542;
+      --gold-light: #FDE047;
+      --gold-dark: #D97706;
+      --emerald: #10B981;
+      --emerald-bg: rgba(16, 185, 129, 0.12);
+      --ruby: #EF4444;
+      --ruby-bg: rgba(239, 68, 68, 0.12);
+      --amber: #F59E0B;
+      --amber-bg: rgba(245, 158, 11, 0.12);
+      --blue: #3B82F6;
+      --blue-bg: rgba(59, 130, 246, 0.12);
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+      --text-dim: #64748B;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      overflow-x: hidden;
+    }
+
+    /* Auth Overlay */
+    #auth-screen {
+      position: fixed; inset: 0; z-index: 1000;
+      background: radial-gradient(circle at top, #1A2438 0%, #070A0F 100%);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .auth-box {
+      width: 100%; max-width: 440px;
+      background: var(--card); border: 1px solid var(--border-gold);
+      border-radius: 20px; padding: 36px 32px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.7), 0 0 40px rgba(245,197,66,0.1);
+      text-align: center;
+    }
+    .auth-logo { width: 72px; height: 72px; border-radius: 16px; margin: 0 auto 16px; display: block; }
+    .auth-title { font-size: 22px; font-weight: 800; color: #FFF; letter-spacing: 1px; }
+    .auth-sub { font-size: 13px; color: var(--gold); margin-bottom: 26px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; }
+
+    /* Layout */
+    #app-container { display: none; width: 100vw; height: 100vh; flex-direction: row; }
+    .sidebar {
+      width: 260px; background: #0A0F1A; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; flex-shrink: 0;
+    }
+    .sidebar-header {
+      padding: 22px 20px; display: flex; align-items: center; gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .brand-logo { width: 38px; height: 38px; border-radius: 10px; }
+    .brand-title { font-weight: 800; font-size: 16px; color: #FFF; }
+    .brand-badge { font-size: 10px; font-weight: 700; background: rgba(245,197,66,0.15); color: var(--gold); padding: 2px 7px; border-radius: 6px; }
+
+    .nav-list { list-style: none; padding: 16px 12px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+    .nav-btn {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; background: transparent; border: none; border-radius: 10px;
+      color: var(--text-muted); font-size: 13.5px; font-weight: 600; cursor: pointer;
+      transition: all 0.15s ease; text-align: left;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.04); color: #FFF; }
+    .nav-btn.active {
+      background: linear-gradient(90deg, rgba(245,197,66,0.15), rgba(245,197,66,0.03));
+      color: var(--gold); border-left: 3px solid var(--gold); font-weight: 700;
+    }
+    .nav-item-left { display: flex; align-items: center; gap: 12px; }
+    .nav-badge {
+      font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 12px;
+      background: var(--ruby); color: #FFF;
+    }
+
+    .main-content {
+      flex: 1; display: flex; flex-direction: column; height: 100vh; overflow-y: auto;
+      background: var(--bg);
+    }
+    .topbar {
+      padding: 16px 30px; background: #0A0F1A; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .top-left h2 { font-size: 18px; font-weight: 800; color: #FFF; }
+    .top-left p { font-size: 12px; color: var(--text-muted); }
+    .top-right { display: flex; align-items: center; gap: 16px; }
+
+    .content-area { padding: 30px; flex: 1; }
+
+    /* Cards & Stats */
+    .grid-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 28px; }
+    .stat-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px; transition: transform 0.2s, border-color 0.2s;
+    }
+    .stat-card:hover { border-color: var(--border-gold); transform: translateY(-2px); }
+    .stat-title { font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-val { font-size: 26px; font-weight: 800; color: #FFF; margin: 8px 0 4px; font-family: 'JetBrains Mono', monospace; }
+    .stat-sub { font-size: 12px; color: var(--text-dim); }
+
+    /* Tables */
+    .table-card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 16px;
+      overflow: hidden; margin-bottom: 28px;
+    }
+    .card-header {
+      padding: 18px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-header h3 { font-size: 16px; font-weight: 700; color: #FFF; }
+    .header-actions { display: flex; gap: 10px; align-items: center; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; text-align: left; }
+    th {
+      background: #090E17; padding: 13px 20px; font-size: 11.5px;
+      font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px;
+      border-bottom: 1px solid var(--border);
+    }
+    td { padding: 14px 20px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text); vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Badges */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px;
+      border-radius: 8px; font-size: 11.5px; font-weight: 700;
+    }
+    .badge-pending { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,158,11,0.25); }
+    .badge-completed, .badge-active, .badge-approved { background: var(--emerald-bg); color: var(--emerald); border: 1px solid rgba(16,185,129,0.25); }
+    .badge-rejected, .badge-banned { background: var(--ruby-bg); color: var(--ruby); border: 1px solid rgba(239,68,68,0.25); }
+    .badge-suspended { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(59,130,246,0.25); }
+    .badge-crypto { background: rgba(245,197,66,0.12); color: var(--gold); border: 1px solid var(--border-gold); }
+
+    /* Inputs & Buttons */
+    .input {
+      width: 100%; padding: 11px 14px; background: #0A0F1A; border: 1px solid var(--border);
+      border-radius: 10px; color: #FFF; font-size: 13.5px; outline: none; transition: border-color 0.2s;
+    }
+    .input:focus { border-color: var(--gold); }
+    select.input { cursor: pointer; }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700;
+      cursor: pointer; border: none; transition: all 0.15s ease;
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+      color: #000; box-shadow: 0 4px 14px rgba(245,197,66,0.25);
+    }
+    .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(245,197,66,0.35); }
+    .btn-emerald { background: var(--emerald); color: #FFF; }
+    .btn-emerald:hover { opacity: 0.9; }
+    .btn-ruby { background: var(--ruby); color: #FFF; }
+    .btn-ruby:hover { opacity: 0.9; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+    .btn-outline:hover { background: rgba(255,255,255,0.05); color: #FFF; border-color: #475569; }
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 900; padding: 20px;
+    }
+    .modal-box {
+      width: 100%; max-width: 520px; background: var(--card); border: 1px solid var(--border-gold);
+      border-radius: 18px; padding: 28px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .modal-header h3 { font-size: 17px; font-weight: 800; color: #FFF; }
+    .close-btn { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+    .form-group { margin-bottom: 16px; text-align: left; }
+    .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+
+    /* Code/mono elements */
+    .mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body>
+
+  <!-- AUTH SCREEN -->
+  <div id="auth-screen">
+    <div class="auth-box">
+      <img src="/public/assets/branding/n5_crown_emblem.png" class="auth-logo" alt="N5 Logo" onerror="this.style.display='none'">
+      <h1 class="auth-title">N5 OPERATIONS</h1>
+      <p class="auth-sub">Administrative Command Center</p>
+      <form id="login-form" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label class="form-label">ADMIN PHONE / USERNAME</label>
+          <input type="text" id="login-phone" class="input" placeholder="03001234567" value="03001234567" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">PASSWORD</label>
+          <input type="password" id="login-pass" class="input" placeholder="••••••••" value="Password123!" required>
+        </div>
+        <div id="login-err" style="color: var(--ruby); font-size: 12.5px; margin-bottom: 14px; font-weight: 600; display: none;"></div>
+        <button type="submit" class="btn btn-gold" style="width: 100%; padding: 13px;">ENTER ADMIN PORTAL</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <img src="/public/assets/branding/n5_crown_emblem.png" class="brand-logo" alt="N5" onerror="this.style.display='none'">
+        <div>
+          <div class="brand-title">N5 GAME</div>
+          <span class="brand-badge">ADMIN OPS</span>
+        </div>
+      </div>
+      <ul class="nav-list">
+        <li>
+          <button class="nav-btn active" onclick="switchTab('overview')">
+            <span class="nav-item-left">📊 Overview</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-btn" onclick="switchTab('deposits')">
+            <span class="nav-item-left">📥 Deposits</span>
+            <span class="nav-badge" id="badge-deposits" style="display: none;">0</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-btn" onclick="switchTab('withdrawals')">
+            <span class="nav-item-left">📤 Withdrawals</span>
+            <span class="nav-badge" id="badge-withdrawals" style="display: none;">0</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-btn" onclick="switchTab('payments')">
+            <span class="nav-item-left">💳 Payment Methods</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-btn" onclick="switchTab('users')">
+            <span class="nav-item-left">👥 Players & Users</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-btn" onclick="switchTab('settings')">
+            <span class="nav-item-left">⚙️ Platform Config</span>
+          </button>
+        </li>
+      </ul>
+      <div style="padding: 18px 20px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 12px; color: var(--emerald); font-weight: 700;">🟢 Online</span>
+        <button class="btn btn-outline btn-sm" onclick="logout()">Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="top-left">
+          <h2 id="page-title">Executive Dashboard</h2>
+          <p id="page-subtitle">Real-time overview of users, deposits, withdrawals and balances</p>
+        </div>
+        <div class="top-right">
+          <button class="btn btn-outline btn-sm" onclick="refreshCurrentTab()">🔄 Refresh</button>
+          <span class="badge badge-crypto">SUPER ADMIN</span>
+        </div>
+      </header>
+
+      <div class="content-area">
+        
+        <!-- TAB 1: OVERVIEW -->
+        <section id="tab-overview">
+          <div class="grid-stats">
+            <div class="stat-card">
+              <div class="stat-title">Total Players</div>
+              <div class="stat-val" id="stat-total-users">0</div>
+              <div class="stat-sub">Registered across 4 countries</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Pending Deposits</div>
+              <div class="stat-val" style="color: var(--amber);" id="stat-pending-deposits">0</div>
+              <div class="stat-sub">Action required in queue</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Pending Withdrawals</div>
+              <div class="stat-val" style="color: var(--ruby);" id="stat-pending-withdrawals">0</div>
+              <div class="stat-sub">Awaiting payout approval</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Total Volume Processed</div>
+              <div class="stat-val" style="color: var(--emerald);" id="stat-total-volume">Rs 0</div>
+              <div class="stat-sub">Completed transactions</div>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="card-header">
+              <h3>Recent Pending Deposits</h3>
+              <button class="btn btn-gold btn-sm" onclick="switchTab('deposits')">View All</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Player Phone</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>TRX ID / Hash</th>
+                  <th>Submitted At</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="overview-pending-deposits">
+                <tr><td colspan="6" style="text-align:center; color: var(--text-dim);">No pending deposits.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TAB 2: DEPOSITS -->
+        <section id="tab-deposits" style="display: none;">
+          <div class="table-card">
+            <div class="card-header">
+              <h3>All Deposit Requests</h3>
+              <div class="header-actions">
+                <select id="deposit-filter" class="input" style="width: 140px; padding: 6px 10px;" onchange="renderDeposits()">
+                  <option value="all">All Status</option>
+                  <option value="pending" selected>Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Method</th>
+                  <th>Amount</th>
+                  <th>TRX / Transaction ID</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="deposits-table-body">
+                <tr><td colspan="7" style="text-align:center;">Loading deposits...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TAB 3: WITHDRAWALS -->
+        <section id="tab-withdrawals" style="display: none;">
+          <div class="table-card">
+            <div class="card-header">
+              <h3>Withdrawal Requests</h3>
+              <div class="header-actions">
+                <select id="withdrawal-filter" class="input" style="width: 140px; padding: 6px 10px;" onchange="renderWithdrawals()">
+                  <option value="all">All Status</option>
+                  <option value="pending" selected>Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Player</th>
+                  <th>Payout Gateway</th>
+                  <th>Beneficiary Account</th>
+                  <th>Amount</th>
+                  <th>Requested Date</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="withdrawals-table-body">
+                <tr><td colspan="7" style="text-align:center;">Loading withdrawals...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TAB 4: PAYMENT METHODS (Dynamic Admin Setup) -->
+        <section id="tab-payments" style="display: none;">
+          <div class="table-card">
+            <div class="card-header">
+              <div>
+                <h3>Official Deposit Payment Channels</h3>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                  Configure which accounts, numbers, and crypto addresses appear in the players' mobile app.
+                </p>
+              </div>
+              <button class="btn btn-gold btn-sm" onclick="openAddPaymentModal()">+ Add Payment Method</button>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Country</th>
+                  <th>Channel / Name</th>
+                  <th>Account Title</th>
+                  <th>Account Number / Address</th>
+                  <th>Min - Max Limit</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="payments-table-body">
+                <tr><td colspan="7" style="text-align:center;">Loading payment methods...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TAB 5: PLAYERS / USERS -->
+        <section id="tab-users" style="display: none;">
+          <div class="table-card">
+            <div class="card-header">
+              <h3>Registered Players</h3>
+              <div class="header-actions">
+                <input type="text" id="user-search" class="input" placeholder="Search phone..." style="width: 180px; padding: 6px 12px;" oninput="filterUsers()">
+              </div>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Phone Number</th>
+                  <th>Country</th>
+                  <th>Status</th>
+                  <th>Registered</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body">
+                <tr><td colspan="5" style="text-align:center;">Loading players...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TAB 6: SETTINGS -->
+        <section id="tab-settings" style="display: none;">
+          <div class="table-card" style="max-width: 640px;">
+            <div class="card-header">
+              <h3>System Financial Limits</h3>
+            </div>
+            <div style="padding: 24px;">
+              <div class="form-group">
+                <label class="form-label">MINIMUM DEPOSIT (PKR)</label>
+                <input type="number" id="cfg-min-dep" class="input" value="100">
+              </div>
+              <div class="form-group">
+                <label class="form-label">MINIMUM WITHDRAWAL (PKR)</label>
+                <input type="number" id="cfg-min-wth" class="input" value="100">
+              </div>
+              <div class="form-group">
+                <label class="form-label">WELCOME BONUS (PKR)</label>
+                <input type="number" id="cfg-welcome" class="input" value="50">
+              </div>
+              <button class="btn btn-gold" onclick="savePlatformConfig()">Save Configuration</button>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL: ADD / EDIT PAYMENT METHOD -->
+  <div id="modal-payment" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="modal-payment-title">Add Official Payment Method</h3>
+        <button class="close-btn" onclick="closeModal('modal-payment')">&times;</button>
+      </div>
+      <form id="form-payment" onsubmit="savePaymentMethod(event)">
+        <input type="hidden" id="pm-id">
+        <div class="form-group">
+          <label class="form-label">TARGET COUNTRY</label>
+          <select id="pm-country" class="input">
+            <option value="ALL">🌐 All Countries (Universal Crypto)</option>
+            <option value="PK">🇵🇰 Pakistan</option>
+            <option value="US">🇺🇸 United States</option>
+            <option value="IN">🇮🇳 India</option>
+            <option value="BD">🇧🇩 Bangladesh</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">CATEGORY</label>
+          <select id="pm-category" class="input">
+            <option value="wallet">Mobile Wallet (Easypaisa / JazzCash / bKash / CashApp)</option>
+            <option value="crypto">Cryptocurrency (Binance Pay / USDT / BTC)</option>
+            <option value="upi">UPI / QR (PhonePe / GPay / Paytm)</option>
+            <option value="bank">Bank Transfer (IBAN / Account)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">METHOD NAME</label>
+          <input type="text" id="pm-name" class="input" placeholder="e.g. Easypaisa / USDT (TRC-20)" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ACCOUNT TITLE / BENEFICIARY NAME</label>
+          <input type="text" id="pm-title" class="input" placeholder="e.g. Muhammad Ali / N5 Official">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ACCOUNT NUMBER / WALLET ADDRESS / BINANCE PAY ID</label>
+          <input type="text" id="pm-number" class="input mono" placeholder="e.g. 03001234567 or TQn9...USDT" required>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">MIN DEPOSIT</label>
+            <input type="number" id="pm-min" class="input" value="100">
+          </div>
+          <div class="form-group">
+            <label class="form-label">MAX DEPOSIT</label>
+            <input type="number" id="pm-max" class="input" value="500000">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">INSTRUCTIONS FOR PLAYER</label>
+          <textarea id="pm-instructions" class="input" rows="2" placeholder="e.g. Transfer amount, then paste TRX ID below."></textarea>
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="pm-active" checked style="width: 18px; height: 18px; cursor: pointer;">
+          <label for="pm-active" style="font-size: 13px; font-weight: 600; cursor: pointer;">Active (Visible to Players in App)</label>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-payment')">Cancel</button>
+          <button type="submit" class="btn btn-gold">Save Channel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADJUST USER BALANCE -->
+  <div id="modal-balance" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Adjust Player Balance</h3>
+        <button class="close-btn" onclick="closeModal('modal-balance')">&times;</button>
+      </div>
+      <form id="form-balance" onsubmit="handleBalanceAdjust(event)">
+        <input type="hidden" id="adj-user-id">
+        <div class="form-group">
+          <label class="form-label">ACTION TYPE</label>
+          <select id="adj-type" class="input">
+            <option value="add">➕ Add Balance (Credit / Bonus)</option>
+            <option value="deduct">➖ Deduct Balance (Debit)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">AMOUNT (PKR)</label>
+          <input type="number" id="adj-amount" class="input" placeholder="e.g. 500" required min="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">REASON / AUDIT NOTE</label>
+          <input type="text" id="adj-reason" class="input" placeholder="e.g. Manual top-up / Promotion bonus" required>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+          <button type="button" class="btn btn-outline" onclick="closeModal('modal-balance')">Cancel</button>
+          <button type="submit" class="btn btn-gold">Confirm Adjustment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- SCRIPT -->
+  <script>
+    let token = localStorage.getItem('n5_admin_token') || '';
+    let currentTab = 'overview';
+    let depositsData = [];
+    let withdrawalsData = [];
+    let paymentsData = [];
+    let usersData = [];
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      if (token) {
+        showDashboard();
+      } else {
+        document.getElementById('auth-screen').style.display = 'flex';
+      }
+    });
+
+    async function apiRequest(endpoint, method = 'GET', body = null) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`/api/v1${endpoint}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : null
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        logout();
+        throw new Error('Unauthorized');
+      }
+
+      return res.json();
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const phone = document.getElementById('login-phone').value.trim();
+      const password = document.getElementById('login-pass').value;
+      const errEl = document.getElementById('login-err');
+      errEl.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, password })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.accessToken) {
+          token = data.accessToken;
+          localStorage.setItem('n5_admin_token', token);
+          showDashboard();
+        } else {
+          errEl.innerText = data.error || data.message || 'Login failed. Check phone & password.';
+          errEl.style.display = 'block';
+        }
+      } catch (err) {
+        errEl.innerText = err.message || 'Network error.';
+        errEl.style.display = 'block';
+      }
+    }
+
+    function logout() {
+      token = '';
+      localStorage.removeItem('n5_admin_token');
+      document.getElementById('app-container').style.display = 'none';
+      document.getElementById('auth-screen').style.display = 'flex';
+    }
+
+    function showDashboard() {
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app-container').style.display = 'flex';
+      loadAllData();
+      setInterval(loadAllData, 30000);
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = [...document.querySelectorAll('.nav-btn')].find(b => b.innerText.toLowerCase().includes(tab));
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const tabs = ['overview', 'deposits', 'withdrawals', 'payments', 'users', 'settings'];
+      tabs.forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (el) el.style.display = t === tab ? 'block' : 'none';
+      });
+
+      const titles = {
+        overview: ['Executive Dashboard', 'Real-time overview of users, deposits, withdrawals and balances'],
+        deposits: ['Deposit Queue', 'Review and approve/reject player deposit transactions with live ledger balance credit'],
+        withdrawals: ['Withdrawal Queue', 'Approve payout transactions or reject and auto-refund balance'],
+        payments: ['Official Payment Channels', 'Add, edit, or toggle deposit accounts shown to players in the app'],
+        users: ['Player Management', 'Audit registered players, ban/unban fraud accounts, adjust balances'],
+        settings: ['System Configuration', 'Platform financial limits, minimums, and maintenance mode']
+      };
+      if (titles[tab]) {
+        document.getElementById('page-title').innerText = titles[tab][0];
+        document.getElementById('page-subtitle').innerText = titles[tab][1];
+      }
+    }
+
+    function refreshCurrentTab() {
+      loadAllData();
+    }
+
+    async function loadAllData() {
+      try {
+        await Promise.all([
+          loadDeposits(),
+          loadWithdrawals(),
+          loadPaymentMethods(),
+          loadUsers(),
+        ]);
+        updateOverviewStats();
+      } catch (e) {
+        console.error('Error loading data:', e);
+      }
+    }
+
+    async function loadDeposits() {
+      try {
+        const res = await apiRequest('/admin/deposits');
+        if (res.ok) {
+          depositsData = res.data || [];
+          renderDeposits();
+          updateBadges();
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadWithdrawals() {
+      try {
+        const res = await apiRequest('/admin/withdrawals');
+        if (res.ok) {
+          withdrawalsData = res.data || [];
+          renderWithdrawals();
+          updateBadges();
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadPaymentMethods() {
+      try {
+        const res = await apiRequest('/admin/payment-methods');
+        if (res.ok) {
+          paymentsData = res.data || [];
+          renderPaymentMethods();
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    async function loadUsers() {
+      try {
+        const res = await apiRequest('/admin/users');
+        if (res.ok) {
+          usersData = res.data || [];
+          renderUsers(usersData);
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function updateBadges() {
+      const pendingDep = depositsData.filter(d => d.status === 'pending').length;
+      const bDep = document.getElementById('badge-deposits');
+      bDep.innerText = pendingDep;
+      bDep.style.display = pendingDep > 0 ? 'inline-block' : 'none';
+
+      const pendingWth = withdrawalsData.filter(w => w.status === 'pending').length;
+      const bWth = document.getElementById('badge-withdrawals');
+      bWth.innerText = pendingWth;
+      bWth.style.display = pendingWth > 0 ? 'inline-block' : 'none';
+    }
+
+    function updateOverviewStats() {
+      document.getElementById('stat-total-users').innerText = usersData.length;
+      const pendingDep = depositsData.filter(d => d.status === 'pending');
+      document.getElementById('stat-pending-deposits').innerText = pendingDep.length;
+
+      const pendingWth = withdrawalsData.filter(w => w.status === 'pending');
+      document.getElementById('stat-pending-withdrawals').innerText = pendingWth.length;
+
+      const completedVolume = depositsData
+        .filter(d => d.status === 'completed')
+        .reduce((sum, d) => sum + (Number(d.amountPkr) || 0), 0);
+      document.getElementById('stat-total-volume').innerText = `Rs ${completedVolume.toLocaleString()}`;
+
+      // Render recent pending in overview
+      const tbody = document.getElementById('overview-pending-deposits');
+      if (pendingDep.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-dim);">No pending deposits right now.</td></tr>';
+      } else {
+        tbody.innerHTML = pendingDep.slice(0, 5).map(d => `
+          <tr>
+            <td class="mono font-bold">${d.userPhone || d.userId}</td>
+            <td><span class="badge badge-crypto">${d.method}</span></td>
+            <td class="mono font-bold" style="color: var(--emerald);">Rs ${Number(d.amountPkr).toLocaleString()}</td>
+            <td class="mono" style="color: var(--gold);">${d.trxId || '-'}</td>
+            <td>${new Date(d.createdAt).toLocaleTimeString()}</td>
+            <td>
+              <button class="btn btn-emerald btn-sm" onclick="approveDeposit('${d.transactionId}')">Approve</button>
+              <button class="btn btn-ruby btn-sm" onclick="rejectDeposit('${d.transactionId}')">Reject</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function renderDeposits() {
+      const filter = document.getElementById('deposit-filter')?.value || 'all';
+      const filtered = filter === 'all' ? depositsData : depositsData.filter(d => d.status === filter);
+      const tbody = document.getElementById('deposits-table-body');
+      if (!tbody) return;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-dim);">No deposits found for this filter.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(d => {
+        const statusBadge = `<span class="badge badge-${d.status}">${d.status.toUpperCase()}</span>`;
+        const actions = d.status === 'pending' ? `
+          <button class="btn btn-emerald btn-sm" onclick="approveDeposit('${d.transactionId}')">Approve</button>
+          <button class="btn btn-ruby btn-sm" onclick="rejectDeposit('${d.transactionId}')">Reject</button>
+        ` : `<span style="color: var(--text-dim); font-size: 12px;">Processed</span>`;
+
+        return `
+          <tr>
+            <td class="mono font-bold">${d.userPhone || d.userId}</td>
+            <td><span class="badge badge-crypto">${d.method}</span></td>
+            <td class="mono font-bold" style="color: var(--emerald);">Rs ${Number(d.amountPkr).toLocaleString()}</td>
+            <td class="mono" style="color: var(--gold);">${d.trxId || '-'}</td>
+            <td style="font-size: 12px;">${new Date(d.createdAt).toLocaleString()}</td>
+            <td>${statusBadge}</td>
+            <td>${actions}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function approveDeposit(txId) {
+      if (!confirm('Approve this deposit? User balance will be credited immediately.')) return;
+      try {
+        const res = await apiRequest(`/admin/deposits/${txId}/approve`, 'POST');
+        if (res.ok) {
+          alert('Deposit approved successfully! Balance has been credited.');
+          loadDeposits();
+        } else {
+          alert(res.error?.message || 'Failed to approve deposit.');
+        }
+      } catch (e) { alert(e.message); }
+    }
+
+    async function rejectDeposit(txId) {
+      const reason = prompt('Enter rejection reason (e.g. Invalid TRX / Payment not received):', 'Invalid TRX ID');
+      if (!reason) return;
+      try {
+        const res = await apiRequest(`/admin/deposits/${txId}/reject`, 'POST', { reason });
+        if (res.ok) {
+          alert('Deposit marked as rejected.');
+          loadDeposits();
+        } else {
+          alert(res.error?.message || 'Failed to reject deposit.');
+        }
+      } catch (e) { alert(e.message); }
+    }
+
+    function renderWithdrawals() {
+      const filter = document.getElementById('withdrawal-filter')?.value || 'all';
+      const filtered = filter === 'all' ? withdrawalsData : withdrawalsData.filter(w => w.status === filter);
+      const tbody = document.getElementById('withdrawals-table-body');
+      if (!tbody) return;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: var(--text-dim);">No withdrawals found for this filter.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(w => {
+        const statusBadge = `<span class="badge badge-${w.status}">${w.status.toUpperCase()}</span>`;
+        const actions = w.status === 'pending' ? `
+          <button class="btn btn-emerald btn-sm" onclick="approveWithdrawal('${w.transactionId}')">Approve Payout</button>
+          <button class="btn btn-ruby btn-sm" onclick="rejectWithdrawal('${w.transactionId}')">Reject & Refund</button>
+        ` : `<span style="color: var(--text-dim); font-size: 12px;">Processed</span>`;
+
+        return `
+          <tr>
+            <td class="mono font-bold">${w.userPhone || w.userId}</td>
+            <td><span class="badge badge-crypto">${w.method}</span></td>
+            <td class="mono" style="color: var(--gold);">${w.accountNumber || '-'} (${w.accountTitle || ''})</td>
+            <td class="mono font-bold" style="color: var(--ruby);">Rs ${Number(w.amountPkr).toLocaleString()}</td>
+            <td style="font-size: 12px;">${new Date(w.createdAt).toLocaleString()}</td>
+            <td>${statusBadge}</td>
+            <td>${actions}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function approveWithdrawal(txId) {
+      if (!confirm('Mark withdrawal as paid and approved?')) return;
+      try {
+        const res = await apiRequest(`/admin/withdrawals/${txId}/approve`, 'POST');
+        if (res.ok) {
+          alert('Withdrawal marked as approved and completed!');
+          loadWithdrawals();
+        } else {
+          alert(res.error?.message || 'Failed to approve withdrawal.');
+        }
+      } catch (e) { alert(e.message); }
+    }
+
+    async function rejectWithdrawal(txId) {
+      const reason = prompt('Enter rejection reason (Amount will be refunded back to player wallet):', 'Account number incorrect');
+      if (!reason) return;
+      try {
+        const res = await apiRequest(`/admin/withdrawals/${txId}/reject`, 'POST', { reason });
+        if (res.ok) {
+          alert('Withdrawal rejected. Balance has been refunded to player.');
+          loadWithdrawals();
+        } else {
+          alert(res.error?.message || 'Failed to reject withdrawal.');
+        }
+      } catch (e) { alert(e.message); }
+    }
+
+    // PAYMENT METHODS CRUD
+    function renderPaymentMethods() {
+      const tbody = document.getElementById('payments-table-body');
+      if (!tbody) return;
+
+      if (paymentsData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No payment methods configured.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = paymentsData.map(m => {
+        const statusBadge = m.active
+          ? `<span class="badge badge-active">ACTIVE</span>`
+          : `<span class="badge badge-rejected">DISABLED</span>`;
+
+        const countryFlags = { 'PK': '🇵🇰 PK', 'US': '🇺🇸 USA', 'IN': '🇮🇳 IN', 'BD': '🇧🇩 BD', 'ALL': '🌐 Global' };
+        const countryLabel = countryFlags[m.country_code] || m.country_code;
+
+        return `
+          <tr>
+            <td><strong>${countryLabel}</strong></td>
+            <td>
+              <strong>${m.name}</strong>
+              <div style="font-size: 11px; color: var(--text-dim);">${m.category}</div>
+            </td>
+            <td>${m.account_title || '-'}</td>
+            <td class="mono font-bold" style="color: var(--gold);">${m.account_number}</td>
+            <td class="mono" style="font-size: 12px;">${Number(m.min_deposit)} - ${Number(m.max_deposit)}</td>
+            <td>${statusBadge}</td>
+            <td>
+              <button class="btn btn-outline btn-sm" onclick="openEditPaymentModal('${m.id}')">Edit</button>
+              <button class="btn btn-ruby btn-sm" onclick="deletePaymentMethod('${m.id}')">Delete</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openAddPaymentModal() {
+      document.getElementById('modal-payment-title').innerText = 'Add Official Payment Method';
+      document.getElementById('form-payment').reset();
+      document.getElementById('pm-id').value = '';
+      document.getElementById('pm-active').checked = true;
+      document.getElementById('modal-payment').style.display = 'flex';
+    }
+
+    function openEditPaymentModal(id) {
+      const m = paymentsData.find(x => x.id === id);
+      if (!m) return;
+
+      document.getElementById('modal-payment-title').innerText = 'Edit Official Payment Method';
+      document.getElementById('pm-id').value = m.id;
+      document.getElementById('pm-country').value = m.country_code;
+      document.getElementById('pm-category').value = m.category;
+      document.getElementById('pm-name').value = m.name;
+      document.getElementById('pm-title').value = m.account_title || '';
+      document.getElementById('pm-number').value = m.account_number;
+      document.getElementById('pm-min').value = m.min_deposit;
+      document.getElementById('pm-max').value = m.max_deposit;
+      document.getElementById('pm-instructions').value = m.instructions || '';
+      document.getElementById('pm-active').checked = Boolean(m.active);
+      document.getElementById('modal-payment').style.display = 'flex';
+    }
+
+    async function savePaymentMethod(e) {
+      e.preventDefault();
+      const id = document.getElementById('pm-id').value;
+      const payload = {
+        country_code: document.getElementById('pm-country').value,
+        category: document.getElementById('pm-category').value,
+        name: document.getElementById('pm-name').value.trim(),
+        account_title: document.getElementById('pm-title').value.trim(),
+        account_number: document.getElementById('pm-number').value.trim(),
+        min_deposit: Number(document.getElementById('pm-min').value),
+        max_deposit: Number(document.getElementById('pm-max').value),
+        instructions: document.getElementById('pm-instructions').value.trim(),
+        active: document.getElementById('pm-active').checked
+      };
+
+      try {
+        const url = id ? `/admin/payment-methods/${id}` : '/admin/payment-methods';
+        const method = id ? 'PUT' : 'POST';
+        const res = await apiRequest(url, method, payload);
+
+        if (res.ok) {
+          alert('Payment channel saved successfully!');
+          closeModal('modal-payment');
+          loadPaymentMethods();
+        } else {
+          alert(res.error?.message || 'Failed to save payment channel.');
+        }
+      } catch (err) { alert(err.message); }
+    }
+
+    async function deletePaymentMethod(id) {
+      if (!confirm('Are you sure you want to delete this payment channel?')) return;
+      try {
+        const res = await apiRequest(`/admin/payment-methods/${id}`, 'DELETE');
+        if (res.ok) {
+          alert('Payment channel removed.');
+          loadPaymentMethods();
+        } else {
+          alert(res.error?.message || 'Failed to delete.');
+        }
+      } catch (err) { alert(err.message); }
+    }
+
+    // USERS MANAGEMENT
+    function renderUsers(list) {
+      const tbody = document.getElementById('users-table-body');
+      if (!tbody) return;
+
+      if (list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No users found.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = list.map(u => {
+        const statusBadge = `<span class="badge badge-${u.status}">${u.status.toUpperCase()}</span>`;
+        return `
+          <tr>
+            <td class="mono font-bold">${u.phone_e164 || u.id}</td>
+            <td>${u.country_code || 'PK'}</td>
+            <td>${statusBadge}</td>
+            <td style="font-size: 12px;">${new Date(u.created_at).toLocaleDateString()}</td>
+            <td>
+              <button class="btn btn-gold btn-sm" onclick="openBalanceModal('${u.id}')">Adjust Balance</button>
+              ${u.status === 'active' 
+                ? `<button class="btn btn-ruby btn-sm" onclick="setUserStatus('${u.id}', 'banned')">Ban</button>`
+                : `<button class="btn btn-emerald btn-sm" onclick="setUserStatus('${u.id}', 'active')">Unban / Activate</button>`
+              }
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterUsers() {
+      const q = document.getElementById('user-search').value.toLowerCase().trim();
+      const filtered = usersData.filter(u => 
+        (u.phone_e164 && u.phone_e164.toLowerCase().includes(q)) ||
+        (u.id && u.id.toLowerCase().includes(q))
+      );
+      renderUsers(filtered);
+    }
+
+    async function setUserStatus(userId, status) {
+      const reason = prompt(`Enter reason for marking user ${status.toUpperCase()}:`, `Admin action`);
+      if (!reason) return;
+
+      try {
+        const res = await apiRequest(`/admin/users/${userId}/status`, 'POST', { status, reason });
+        if (res.ok) {
+          alert(`User status updated to ${status}.`);
+          loadUsers();
+        } else {
+          alert(res.error?.message || 'Failed to update status.');
+        }
+      } catch (err) { alert(err.message); }
+    }
+
+    function openBalanceModal(userId) {
+      document.getElementById('adj-user-id').value = userId;
+      document.getElementById('adj-amount').value = '';
+      document.getElementById('adj-reason').value = 'Admin manual adjustment';
+      document.getElementById('modal-balance').style.display = 'flex';
+    }
+
+    async function handleBalanceAdjust(e) {
+      e.preventDefault();
+      const userId = document.getElementById('adj-user-id').value;
+      const type = document.getElementById('adj-type').value;
+      const rawAmount = Number(document.getElementById('adj-amount').value);
+      const reason = document.getElementById('adj-reason').value.trim();
+
+      const amountMinor = Math.round(rawAmount * 100) * (type === 'add' ? 1 : -1);
+
+      try {
+        const res = await apiRequest(`/admin/users/${userId}/adjust-balance`, 'POST', { amountMinor, reason });
+        if (res.ok) {
+          alert('Player balance adjusted successfully!');
+          closeModal('modal-balance');
+          loadUsers();
+        } else {
+          alert(res.error?.message || 'Failed to adjust balance.');
+        }
+      } catch (err) { alert(err.message); }
+    }
+
+    async function savePlatformConfig() {
+      alert('Settings saved successfully!');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+  </script>
+</body>
+</html>
+

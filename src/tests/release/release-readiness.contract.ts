@@ -1,0 +1,2 @@
+export const releaseReadinessChecks = ['environment configuration','HTTPS in production','database connectivity','migration state','API health','authentication/session','wallet/ledger integrity','payment webhook verification','idempotency','KYC/security controls','provider configuration','localization','responsible gaming','backup/recovery plan','logging and monitoring'] as const;
+export type ReleaseReadinessCheck = typeof releaseReadinessChecks[number];

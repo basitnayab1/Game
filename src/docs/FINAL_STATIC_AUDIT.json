@@ -1,0 +1,15 @@
+{
+  "dart_files": 71,
+  "backend_ts_files": 1018,
+  "database_migrations": 33,
+  "missing_relative_imports": [],
+  "final_languages": [
+    "en",
+    "tr",
+    "hi",
+    "ur",
+    "ar"
+  ],
+  "legacy_placeholder_hits": [],
+  "status": "PASS"
+}

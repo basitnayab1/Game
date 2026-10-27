@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+const routes=fs.readFileSync(path.resolve(process.cwd(),'backend/src/routes/index.ts'),'utf8');
+const controller=fs.readFileSync(path.resolve(process.cwd(),'backend/src/modules/games/game-launch.controller.ts'),'utf8');
+assert.match(routes,/post\('\/games\/\:gameId\/launch', requireAuth, launchGame\)/);
+assert.match(controller,/REAL_MONEY_GAME_LAUNCH_ENABLED/);
+assert.match(controller,/AUTHORIZED_GAME_PROVIDER_READY/);
+assert.match(controller,/PROVIDER_ADAPTER_NOT_CONFIGURED/);
+console.log('game session route contract: PASS');

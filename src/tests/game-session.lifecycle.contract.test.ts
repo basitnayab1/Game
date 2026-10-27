@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+const root = path.resolve(process.cwd());
+const migration = fs.readFileSync(path.join(root,'database/migrations/022_game_sessions.sql'),'utf8');
+const service = fs.readFileSync(path.join(root,'backend/src/modules/games/game-session.service.ts'),'utf8');
+assert.match(migration,/CREATE TABLE IF NOT EXISTS game_sessions/);
+assert.match(migration,/expires_at TIMESTAMPTZ NOT NULL/);
+assert.match(migration,/provider_session_id/);
+assert.match(service,/recently_played_games/);
+assert.match(service,/ON CONFLICT \(user_id,game_id\)/);
+assert.match(service,/status='expired'/);
+console.log('game session lifecycle contract: PASS');

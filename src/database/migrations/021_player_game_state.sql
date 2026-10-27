@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS favorites (user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, game_id UUID NOT NULL REFERENCES games(id) ON DELETE RESTRICT, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (user_id, game_id));
+CREATE TABLE IF NOT EXISTS recently_played_games (user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE, game_id UUID NOT NULL REFERENCES games(id) ON DELETE RESTRICT, last_played_at TIMESTAMPTZ NOT NULL DEFAULT now(), PRIMARY KEY (user_id, game_id));
+CREATE INDEX IF NOT EXISTS idx_recently_played_user_time ON recently_played_games(user_id, last_played_at DESC);

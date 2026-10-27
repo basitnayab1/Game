@@ -1,0 +1,53 @@
+# ---------------------------------------------------------------
+# Secrets and local configuration
+# ---------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+key.properties
+src/android/local.properties
+
+# Database dumps, removed dev files and other local backups (contain user data)
+backups/
+*.dump
+*.sql.gz
+
+# ---------------------------------------------------------------
+# Build output (rebuilt by `npm run build`, Flutter and Docker)
+# ---------------------------------------------------------------
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Flutter / Dart / Android
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.gradle/
+src/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+
+# Release binaries (distribute through a release channel, not git)
+*.apk
+*.aab
+*.idsig
+*.exe
+
+# ---------------------------------------------------------------
+# Editors, OS and logs
+# ---------------------------------------------------------------
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*

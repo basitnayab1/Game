@@ -1,0 +1,1 @@
+# N5 Game — Parts 1–100\n\nThis milestone records completion of the planned part sequence.\n\nImportant: individual parts are interim artifacts. They are not, by themselves, proof that the entire application compiles as one merged project. The next phase is consolidation, conflict cleanup, dependency resolution, static analysis, tests, and final packaging.\n

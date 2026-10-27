@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N5 Casino — Official Player Portal & Game Lobby</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0e17;
+      --bg-card: #131a29;
+      --bg-card-hover: #1c263c;
+      --bg-surface: #0f1523;
+      --primary: #f59e0b;
+      --primary-hover: #d97706;
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.35);
+      --ruby: #ef4444;
+      --accent: #3b82f6;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #1e293b;
+      --border-focus: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* TOP NAVBAR */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(15, 21, 35, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .brand-logo {
+      font-size: 24px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #f59e0b, #fbbf24, #f59e0b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .vip-pill {
+      background: linear-gradient(135deg, #78350f, #b45309);
+      color: #fef3c7;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid #d97706;
+    }
+
+    .search-bar-wrap {
+      flex: 1;
+      max-width: 380px;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 8px 16px 8px 36px;
+      border-radius: 20px;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 12px rgba(245, 158, 11, 0.25);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 14px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .wallet-box {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      padding: 6px 14px;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .wallet-box:hover {
+      border-color: var(--emerald);
+    }
+
+    .wallet-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .wallet-amount {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--emerald);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .btn {
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-deposit {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      box-shadow: 0 0 15px var(--emerald-glow);
+    }
+
+    .btn-deposit:hover {
+      background: linear-gradient(135deg, #059669, #047857);
+      transform: translateY(-1px);
+    }
+
+    .btn-withdraw {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
+
+    .btn-withdraw:hover {
+      background: #334155;
+      color: #f8fafc;
+    }
+
+    .btn-login {
+      background: var(--primary);
+      color: #000;
+      font-weight: 800;
+    }
+
+    .btn-login:hover {
+      background: var(--primary-hover);
+    }
+
+    .btn-admin {
+      background: transparent;
+      border: 1px solid #475569;
+      color: #94a3b8;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+    }
+
+    .btn-admin:hover {
+      color: #fff;
+      border-color: #94a3b8;
+    }
+
+    /* MAIN CONTAINER */
+    .main-wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 24px 20px 80px 20px;
+      flex: 1;
+      width: 100%;
+    }
+
+    /* HERO BANNER */
+    .hero-banner {
+      width: 100%;
+      height: 240px;
+      border-radius: 20px;
+      background: radial-gradient(circle at 80% 50%, rgba(245, 158, 11, 0.22) 0%, rgba(15, 23, 42, 0.95) 100%),
+                  linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 36px 44px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+
+    .hero-banner::after {
+      content: '🎰';
+      position: absolute;
+      right: 40px;
+      font-size: 140px;
+      opacity: 0.15;
+      pointer-events: none;
+    }
+
+    .hero-content {
+      max-width: 650px;
+      z-index: 2;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      background: rgba(245, 158, 11, 0.15);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+
+    .hero-title {
+      font-size: 32px;
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 8px;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, #f59e0b, #fef08a);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 14px;
+      color: #cbd5e1;
+      margin-bottom: 18px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* CATEGORIES BAR */
+    .categories-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+      scrollbar-width: none;
+    }
+
+    .categories-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .cat-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 9px 18px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cat-pill:hover {
+      background: var(--bg-card-hover);
+      color: #fff;
+    }
+
+    .cat-pill.active {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      border-color: #f59e0b;
+      box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);
+    }
+
+    /* SECTION HEADER */
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .game-count {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* GAME GRID */
+    .games-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 18px;
+      margin-bottom: 40px;
+    }
+
+    .game-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .game-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--primary);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.6), 0 0 16px rgba(245, 158, 11, 0.2);
+    }
+
+    .game-thumb {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 48px;
+      position: relative;
+    }
+
+    .game-badge {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 3px 7px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-hot {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+    }
+
+    .badge-new {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+    }
+
+    .game-play-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .game-card:hover .game-play-overlay {
+      opacity: 1;
+    }
+
+    .overlay-play-btn {
+      background: var(--primary);
+      color: #000;
+      font-size: 13px;
+      font-weight: 900;
+      padding: 9px 20px;
+      border-radius: 20px;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.6);
+      letter-spacing: 0.5px;
+      transform: scale(0.9);
+      transition: transform 0.2s;
+    }
+
+    .game-card:hover .overlay-play-btn {
+      transform: scale(1);
+    }
+
+    .game-info {
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .game-name {
+      font-size: 14px;
+      font-weight: 800;
+      color: #f8fafc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .game-provider {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* LIVE RECENT WINS TICKER */
+    .ticker-bar {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+
+    .ticker-title {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ticker-content {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      overflow-x: hidden;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .ticker-item {
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.03);
+      padding: 4px 12px;
+      border-radius: 20px;
+    }
+
+    .ticker-user { color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    .ticker-win { color: var(--emerald); font-weight: 800; font-family: 'JetBrains Mono', monospace; }
+
+    /* MODALS */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-box {
+      background: #111827;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 480px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    .modal-close:hover { color: #fff; }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    .modal-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .form-input {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    /* FULLSCREEN GAME MODAL */
+    .game-modal-box {
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 20px;
+      width: 95vw;
+      max-width: 900px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .game-modal-header {
+      padding: 12px 18px;
+      background: #111827;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e293b;
+    }
+
+    .game-frame {
+      width: 100%;
+      flex: 1;
+      border: none;
+      background: #000;
+    }
+
+    /* FOOTER */
+    .footer {
+      background: #090d16;
+      border-top: 1px solid var(--border);
+      padding: 30px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .footer-badges {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .badge-pill {
+      background: #1e293b;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    /* FLOATING SUPPORT BUTTON */
+    .support-float-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 999;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 30px;
+      font-weight: 800;
+      font-size: 14px;
+      box-shadow: 0 8px 25px rgba(16, 185, 129, 0.45);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.25s;
+    }
+    .support-float-btn:hover {
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 12px 30px rgba(16, 185, 129, 0.6);
+    }
+
+    /* LUCKY WHEEL STYLES */
+    .wheel-wrap {
+      position: relative;
+      width: 320px;
+      height: 320px;
+      margin: 16px auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #wheelCanvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.35);
+      transition: transform 4.5s cubic-bezier(0.15, 0.7, 0.1, 1);
+    }
+    .wheel-pointer {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 0;
+      border-left: 14px solid transparent;
+      border-right: 14px solid transparent;
+      border-top: 24px solid #ef4444;
+      z-index: 10;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.7));
+    }
+
+    /* REFERRAL CARD STYLES */
+    .referral-box {
+      background: #090d16;
+      border: 1px dashed var(--primary);
+      padding: 14px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 14px 0;
+    }
+    .ref-link-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #38bdf8;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 320px;
+    }
+    .ref-stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .ref-stat-card {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+    .ref-stat-num {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .ref-stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAVBAR -->
+  <header class="navbar">
+    <div class="brand-group" onclick="loadLobby()">
+      <div class="brand-logo">⚡ N5 CASINO</div>
+      <div class="vip-pill" id="vipPill">VIP 1</div>
+    </div>
+
+    <div class="search-bar-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="searchInput" placeholder="Search 6+ games (Slots, Crash, Roulette...)" onkeyup="filterGames()">
+    </div>
+
+    <div class="nav-actions">
+      <!-- Wallet & Balance -->
+      <div class="wallet-box" onclick="openCashierModal('deposit')">
+        <div>
+          <div class="wallet-label">Balance</div>
+          <div class="wallet-amount" id="balanceText">PKR ...</div>
+        </div>
+        <span style="font-size: 16px;">💳</span>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <button class="btn" style="background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; box-shadow: 0 0 15px rgba(124, 58, 237, 0.4);" onclick="openWheelModal()">🎁 Daily Wheel</button>
+      <button class="btn" style="background: #1e293b; color: #38bdf8; border: 1px solid #0284c7;" onclick="openReferralModal()">👥 Referral</button>
+      <button class="btn btn-deposit" onclick="openCashierModal('deposit')">+ Deposit</button>
+      <button class="btn btn-withdraw" onclick="openCashierModal('withdraw')">Withdraw</button>
+      <a href="/admin" target="_blank" class="btn-admin">⚙️ Admin</a>
+      <button class="btn btn-login" id="authBtn" onclick="openAuthModal()">Login</button>
+    </div>
+  </header>
+
+  <!-- MAIN VIEW -->
+  <main class="main-wrap">
+
+    <!-- HERO PROMOTION BANNER -->
+    <section class="hero-banner">
+      <div class="hero-content">
+        <div class="hero-tag">🔥 FEATURED GAME</div>
+        <h1 class="hero-title">Gates of Olympus <span>1000</span></h1>
+        <p class="hero-desc">Experience Zeus' thunder with 5,000x multipliers! Server-authoritative fair spins powered by N5 Game Engine.</p>
+        <div class="hero-actions">
+          <button class="btn btn-login" onclick="launchGameById('e2e6fbb2-3d3b-4f4a-82d7-ae61195641f1', 'Gates of Olympus')">🎰 PLAY NOW</button>
+          <button class="btn btn-withdraw" onclick="claimTestFaucet()">Claim +PKR 1,000 Credits</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- LIVE RECENT WINS TICKER -->
+    <div class="ticker-bar">
+      <div class="ticker-title">⚡ LIVE WINS</div>
+      <div class="ticker-content" id="tickerTrack">
+        <div class="ticker-item"><span class="ticker-user">Player_92***333</span> won <span class="ticker-win">PKR 4,800</span> on Gates of Olympus</div>
+        <div class="ticker-item"><span class="ticker-user">Player_03***194</span> won <span class="ticker-win">PKR 12,500</span> on Sweet Bonanza</div>
+        <div class="ticker-item"><span class="ticker-user">Player_92***881</span> won <span class="ticker-win">PKR 3,200</span> on Aviator</div>
+        <div class="ticker-item"><span class="ticker-user">Player_03***552</span> won <span class="ticker-win">PKR 9,600</span> on Mines Gold</div>
+      </div>
+    </div>
+
+    <!-- CATEGORIES SELECTOR -->
+    <nav class="categories-bar">
+      <div class="cat-pill active" onclick="selectCategory('All', this)">🌟 All Games</div>
+      <div class="cat-pill" onclick="selectCategory('Slots', this)">🎰 Slots</div>
+      <div class="cat-pill" onclick="selectCategory('Crash', this)">🚀 Crash & Aviator</div>
+      <div class="cat-pill" onclick="selectCategory('Arcade', this)">💣 Mines & Arcade</div>
+      <div class="cat-pill" onclick="selectCategory('Live Casino', this)">🃏 Live Casino</div>
+      <div class="cat-pill" onclick="selectCategory('Tables', this)">🎲 Table Games</div>
+    </nav>
+
+    <!-- GAMES SECTION HEADER -->
+    <div class="section-head">
+      <div class="section-title">
+        <span>🎮 Casino Games Catalog</span>
+        <span class="game-count" id="gameCount">Loading games...</span>
+      </div>
+    </div>
+
+    <!-- GAMES GRID -->
+    <div class="games-grid" id="gamesGrid">
+      <!-- Injected via JavaScript -->
+    </div>
+
+  </main>
+
+  <!-- CASHIER MODAL (DEPOSIT / WITHDRAW / FAUCET) -->
+  <div class="modal-overlay" id="cashierModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('cashierModal')">✕</button>
+      <div style="display:flex; gap:10px; margin-bottom:16px; border-bottom:1px solid #1e293b; padding-bottom:10px;">
+        <button class="btn btn-deposit" id="tabDepositBtn" onclick="switchCashierTab('deposit')">Deposit</button>
+        <button class="btn btn-withdraw" id="tabWithdrawBtn" onclick="switchCashierTab('withdraw')">Withdraw</button>
+      </div>
+
+      <!-- Deposit View -->
+      <div id="depositView">
+        <h3 class="modal-title">Deposit PKR</h3>
+        <p class="modal-desc">Instant deposit via JazzCash or EasyPaisa wallet.</p>
+        <div class="form-group">
+          <label class="form-label">Payment Gateway</label>
+          <select class="form-input" id="depositGateway">
+            <option value="easypaisa">EasyPaisa (Account: 0311-1222333)</option>
+            <option value="jazzcash">JazzCash (Account: 0300-9876543)</option>
+            <option value="bank">Meezan Bank (IBAN: PK64MEZN0001)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Amount (PKR)</label>
+          <input type="number" class="form-input" id="depositAmount" value="1000" min="100" step="100">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Transaction ID / TRX</label>
+          <input type="text" class="form-input" id="depositTrx" placeholder="e.g. 98124892482">
+        </div>
+        <button class="btn btn-deposit" style="width:100%; justify-content:center; padding:12px;" onclick="submitDeposit()">Submit Deposit Request</button>
+        <button class="btn" style="width:100%; justify-content:center; margin-top:8px; background:#1e293b;" onclick="claimTestFaucet()">Or Instant +PKR 1,000 Test Credit</button>
+      </div>
+
+      <!-- Withdraw View -->
+      <div id="withdrawView" style="display:none;">
+        <h3 class="modal-title">Withdraw PKR</h3>
+        <p class="modal-desc">Cash out to your local EasyPaisa / JazzCash account.</p>
+        <div class="form-group">
+          <label class="form-label">Withdraw Method</label>
+          <select class="form-input" id="withdrawGateway">
+            <option value="easypaisa">EasyPaisa</option>
+            <option value="jazzcash">JazzCash</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Account Phone Number</label>
+          <input type="text" class="form-input" id="withdrawPhone" placeholder="03111222333">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Withdraw Amount (PKR)</label>
+          <input type="number" class="form-input" id="withdrawAmount" value="500" min="100">
+        </div>
+        <button class="btn btn-withdraw" style="width:100%; justify-content:center; padding:12px; background:var(--accent); color:#fff;" onclick="submitWithdraw()">Submit Cashout Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTH MODAL (LOGIN / REGISTER) -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('authModal')">✕</button>
+      <h3 class="modal-title" id="authTitle">Login to N5 Casino</h3>
+      <p class="modal-desc" id="authDesc">Enter your credentials to access real money games.</p>
+
+      <div class="form-group">
+        <label class="form-label">Mobile Phone</label>
+        <input type="text" class="form-input" id="authPhone" placeholder="+923001234567" autocomplete="tel">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" class="form-input" id="authPassword" autocomplete="current-password">
+      </div>
+      <button class="btn btn-login" style="width:100%; justify-content:center; padding:12px;" onclick="submitAuth()">Continue</button>
+      <div id="authError" style="color:var(--ruby); font-size:12px; margin-top:10px; text-align:center;"></div>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN EMBEDDED GAME MODAL -->
+  <div class="modal-overlay" id="gameModal">
+    <div class="game-modal-box">
+      <div class="game-modal-header">
+        <div style="font-weight:800; display:flex; align-items:center; gap:8px;">
+          <span id="modalGameTitle">Game</span>
+          <span class="badge-pill" style="background:#10b981; color:#fff;">LIVE</span>
+        </div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn" style="background:#1e293b; padding:4px 10px; font-size:12px;" onclick="openGameStandalone()">↗ Full Window</button>
+          <button class="modal-close" style="position:static;" onclick="closeGameModal()">✕</button>
+        </div>
+      </div>
+      <iframe class="game-frame" id="gameFrame" src="about:blank"></iframe>
+    </div>
+  </div>
+
+  <!-- DAILY LUCKY WHEEL MODAL -->
+  <div class="modal-overlay" id="wheelModal">
+    <div class="modal-box" style="text-align:center; max-width:440px;">
+      <button class="modal-close" onclick="closeModal('wheelModal')">✕</button>
+      <h3 class="modal-title">🎁 Daily Lucky Wheel</h3>
+      <p class="modal-desc" id="wheelSubtitle">Spin every 24 hours to win free PKR cash directly to your wallet!</p>
+
+      <div class="wheel-wrap">
+        <div class="wheel-pointer"></div>
+        <canvas id="wheelCanvas" width="320" height="320"></canvas>
+      </div>
+
+      <div id="wheelStatusMsg" style="font-size:14px; font-weight:700; margin:12px 0; color:#38bdf8;"></div>
+
+      <button class="btn btn-login" id="spinWheelBtn" style="width:100%; justify-content:center; padding:14px; font-size:16px;" onclick="spinWheel()">
+        🎡 SPIN NOW (FREE)
+      </button>
+    </div>
+  </div>
+
+  <!-- REFERRAL & AGENT MODAL -->
+  <div class="modal-overlay" id="referralModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('referralModal')">✕</button>
+      <h3 class="modal-title">👥 Referral & Earn Commission</h3>
+      <p class="modal-desc">Share your personal link with friends. Earn up to 5% commission on all their bets and deposits!</p>
+
+      <div class="form-group">
+        <label class="form-label">Your Unique Referral Link</label>
+        <div class="referral-box">
+          <span class="ref-link-text" id="refLinkText">Generating link...</span>
+          <button class="btn btn-deposit" style="padding:6px 14px; font-size:12px;" onclick="copyRefLink()">Copy Link</button>
+        </div>
+      </div>
+
+      <div class="ref-stats-grid">
+        <div class="ref-stat-card">
+          <div class="ref-stat-num" id="refTotalInvited">0</div>
+          <div class="ref-stat-label">Total Friends</div>
+        </div>
+        <div class="ref-stat-card">
+          <div class="ref-stat-num" id="refCommission">PKR 0.00</div>
+          <div class="ref-stat-label">Commission Earned</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 24/7 LIVE SUPPORT MODAL -->
+  <div class="modal-overlay" id="supportModal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeModal('supportModal')">✕</button>
+      <h3 class="modal-title">💬 24/7 Live Customer Support</h3>
+      <p class="modal-desc">Need help with deposits, withdrawals, or game rules? Contact our operator team.</p>
+
+      <a href="https://wa.me/923111222333?text=Hello%20N5%20Casino%20Support,%20I%20need%20assistance" target="_blank" class="btn" style="background:#25d366; color:#fff; width:100%; justify-content:center; padding:12px; margin-bottom:16px; font-weight:800; text-decoration:none;">
+        📱 Chat Directly on WhatsApp (+92 311 1222333)
+      </a>
+
+      <div style="border-top:1px solid #1e293b; padding-top:14px; margin-top:14px;">
+        <h4 style="font-size:14px; margin-bottom:10px;">Or Submit Instant Support Ticket</h4>
+        <div class="form-group">
+          <label class="form-label">Issue Category</label>
+          <select class="form-input" id="ticketCategory">
+            <option value="Deposit">Deposit Issue</option>
+            <option value="Withdrawal">Withdrawal Issue</option>
+            <option value="Game">Game Inquiry</option>
+            <option value="Account">Account Security</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subject</label>
+          <input type="text" class="form-input" id="ticketSubject" placeholder="e.g. Deposit not credited">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message Details</label>
+          <textarea class="form-input" id="ticketMessage" rows="3" placeholder="Explain your issue..."></textarea>
+        </div>
+        <button class="btn btn-deposit" style="width:100%; justify-content:center; padding:12px;" onclick="submitSupportTicket()">Submit Ticket to Admin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING SUPPORT BUTTON -->
+  <div class="support-float-btn" onclick="openSupportModal()">
+    <span>💬</span>
+    <span>24/7 Support</span>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-badges">
+      <span class="badge-pill">18+ ONLY</span>
+      <span class="badge-pill">PROVABLY FAIR</span>
+      <span class="badge-pill">SSL 256-BIT ENCRYPTION</span>
+      <span class="badge-pill">POSTGRESQL AUDITED</span>
+    </div>
+    <p>© 2026 N5 Casino Group. Built with Node.js, Express, Docker PostgreSQL & Vite Admin.</p>
+  </footer>
+
+  <script>
+    let token = localStorage.getItem('n5_player_token') || localStorage.getItem('n5_admin_token') || '';
+    let currentCategory = 'All';
+    let allGames = [];
+    let currentGameUrl = '';
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // No shared demo account: players sign in themselves through the Login modal.
+    async function autoLoginDefaultPlayer() {
+      token = '';
+      updateAuthButtonState();
+      return null;
+    }
+
+    async function apiFetch(url, options = {}) {
+      options.headers = options.headers || {};
+      if (token) {
+        options.headers['Authorization'] = `Bearer ${token}`;
+      }
+      let res;
+      try {
+        res = await fetch(url, options);
+      } catch (err) {
+        throw err;
+      }
+
+      // If token is invalid or expired (401), auto-login and retry seamlessly
+      if (res && res.status === 401) {
+        localStorage.removeItem('n5_player_token');
+        token = '';
+        const freshToken = await autoLoginDefaultPlayer();
+        if (freshToken) {
+          options.headers['Authorization'] = `Bearer ${freshToken}`;
+          res = await fetch(url, options);
+        }
+      }
+      return res;
+    }
+
+    function updateAuthButtonState() {
+      const authBtn = document.getElementById('authBtn');
+      if (!authBtn) return;
+      if (token) {
+        authBtn.innerText = 'Logout';
+        authBtn.className = 'btn btn-withdraw';
+        authBtn.onclick = logout;
+      } else {
+        authBtn.innerText = 'Login';
+        authBtn.className = 'btn btn-login';
+        authBtn.onclick = openAuthModal;
+      }
+    }
+
+    // Initialize Lobby
+    async function initLobby() {
+      await ensureLoginState();
+      await fetchWallet();
+      await fetchGames();
+      startTickerAnimation();
+    }
+
+    async function ensureLoginState() {
+      if (!token) {
+        await autoLoginDefaultPlayer();
+      } else {
+        // Quick verification of existing token; if expired/stale, refresh immediately
+        try {
+          const testRes = await fetch('/api/v1/wallet', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (testRes.status === 401) {
+            await autoLoginDefaultPlayer();
+          }
+        } catch (_) {}
+      }
+      updateAuthButtonState();
+    }
+
+    function logout() {
+      localStorage.removeItem('n5_player_token');
+      token = '';
+      window.location.reload();
+    }
+
+    async function fetchWallet() {
+      if (!token) {
+        document.getElementById('balanceText').innerText = 'PKR 0.00';
+        return;
+      }
+      try {
+        const res = await apiFetch('/api/v1/wallet');
+        const json = await res.json();
+        if (json.ok && json.data) {
+          const bal = (Number(json.data.availableMinor || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 });
+          document.getElementById('balanceText').innerText = `PKR ${bal}`;
+        }
+      } catch (err) {
+        console.error('Wallet fetch failed:', err);
+      }
+    }
+
+    async function fetchGames() {
+      try {
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch('/api/v1/games/catalog', { headers });
+        const json = await res.json();
+        if (json.ok && Array.isArray(json.data)) {
+          allGames = json.data;
+        } else {
+          allGames = getDefaultFallbackGames();
+        }
+      } catch (_) {
+        allGames = getDefaultFallbackGames();
+      }
+      renderGames();
+    }
+
+    function getDefaultFallbackGames() {
+      return [
+        { id: 'e2e6fbb2-3d3b-4f4a-82d7-ae61195641f1', name: 'Gates of Olympus', category: 'Slots', providerName: 'Pragmatic Play', isHot: true, isNew: false, emoji: '⚡' },
+        { id: 'e2e6fbb2-3d3b-4f4a-82d7-ae61195641f2', name: 'Sweet Bonanza', category: 'Slots', providerName: 'Pragmatic Play', isHot: true, isNew: false, emoji: '🍬' },
+        { id: 'e2e6fbb2-3d3b-4f4a-82d7-ae61195641f3', name: 'Sugar Rush 1000', category: 'Slots', providerName: 'Pragmatic Play', isHot: false, isNew: true, emoji: '🍭' },
+        { id: 'e2e6fbb2-3d3b-4f4a-82d7-ae61195641f4', name: 'Aviator (Crash)', category: 'Crash', providerName: 'Spribe', isHot: true, isNew: true, emoji: '🚀' },
+        { id: 'e2e6fbb2-3d3b-4f4a-82d7-ae61195641f5', name: 'Mines Gold', category: 'Arcade', providerName: 'Spribe', isHot: false, isNew: true, emoji: '💣' },
+        { id: 'e2e6fbb2-3d3b-4f4a-82d7-ae61195641f6', name: 'Lightning Roulette', category: 'Live Casino', providerName: 'Evolution', isHot: true, isNew: false, emoji: '🎡' },
+        { id: 'e2e6fbb2-3d3b-4f4a-82d7-ae61195641f7', name: 'Blackjack VIP', category: 'Tables', providerName: 'Evolution', isHot: false, isNew: false, emoji: '🃏' }
+      ];
+    }
+
+    function renderGames() {
+      const grid = document.getElementById('gamesGrid');
+      grid.innerHTML = '';
+
+      const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+      const filtered = allGames.filter(g => {
+        const matchesCategory = (currentCategory === 'All') || (g.category === currentCategory);
+        const matchesSearch = !query || g.name.toLowerCase().includes(query) || (g.category && g.category.toLowerCase().includes(query));
+        return matchesCategory && matchesSearch;
+      });
+
+      document.getElementById('gameCount').innerText = `${filtered.length} games available`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:40px; color:#64748b;">No games found matching "${query}".</div>`;
+        return;
+      }
+
+      filtered.forEach(game => {
+        const card = document.createElement('div');
+        card.className = 'game-card';
+        card.onclick = () => launchGameById(game.id, game.name);
+
+        const emoji = game.emoji || getCategoryEmoji(game.category);
+        const badge = game.isHot ? '<span class="game-badge badge-hot">HOT</span>' : (game.isNew ? '<span class="game-badge badge-new">NEW</span>' : '');
+
+        card.innerHTML = `
+          <div class="game-thumb">
+            ${badge}
+            ${emoji}
+            <div class="game-play-overlay">
+              <span class="overlay-play-btn">▶ PLAY</span>
+            </div>
+          </div>
+          <div class="game-info">
+            <div class="game-name">${escapeHtml(game.name)}</div>
+            <div class="game-provider">${escapeHtml(game.providerName || game.category || 'N5 Engine')}</div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function getCategoryEmoji(cat) {
+      if (!cat) return '🎰';
+      const c = cat.toLowerCase();
+      if (c.includes('slot')) return '🎰';
+      if (c.includes('crash')) return '🚀';
+      if (c.includes('arcade') || c.includes('mine')) return '💣';
+      if (c.includes('live')) return '🎡';
+      if (c.includes('table') || c.includes('card')) return '🃏';
+      return '🎲';
+    }
+
+    function selectCategory(cat, el) {
+      currentCategory = cat;
+      document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+      el.classList.add('active');
+      renderGames();
+    }
+
+    function filterGames() {
+      renderGames();
+    }
+
+    async function launchGameById(gameId, gameName) {
+      if (!token) {
+        await ensureLoginState();
+      }
+
+      try {
+        const res = await apiFetch(`/api/v1/games/${gameId}/launch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const json = await res.json();
+        let targetUrl = `/games/play?game=${encodeURIComponent(gameId)}&name=${encodeURIComponent(gameName)}`;
+        if (json.ok && json.data && json.data.launchUrl) {
+          targetUrl = json.data.launchUrl;
+        }
+
+        currentGameUrl = targetUrl;
+        document.getElementById('modalGameTitle').innerText = `⚡ ${gameName}`;
+        document.getElementById('gameFrame').src = targetUrl;
+        document.getElementById('gameModal').classList.add('active');
+      } catch (err) {
+        // Fallback to direct launch
+        currentGameUrl = `/games/play?game=${encodeURIComponent(gameId)}&name=${encodeURIComponent(gameName)}`;
+        document.getElementById('gameFrame').src = currentGameUrl;
+        document.getElementById('gameModal').classList.add('active');
+      }
+    }
+
+    function openGameStandalone() {
+      if (currentGameUrl) {
+        window.open(currentGameUrl, '_blank');
+      }
+    }
+
+    function closeGameModal() {
+      document.getElementById('gameModal').classList.remove('active');
+      document.getElementById('gameFrame').src = 'about:blank';
+      fetchWallet(); // Refresh balance when closing game
+    }
+
+    async function claimTestFaucet() {
+      if (!token) {
+        await ensureLoginState();
+        if (!token) { openAuthModal(); return; }
+      }
+      try {
+        const res = await apiFetch('/api/v1/games/play/faucet', {
+          method: 'POST'
+        });
+        const json = await res.json();
+        if (json.ok) {
+          alert('🎉 +PKR 1,000 Test Credits successfully credited to your wallet!');
+          fetchWallet();
+          closeModal('cashierModal');
+        } else {
+          alert('Faucet error: ' + (json.error?.message || 'Could not claim'));
+        }
+      } catch (err) {
+        alert('Network error claiming faucet');
+      }
+    }
+
+    function openCashierModal(tab) {
+      switchCashierTab(tab);
+      document.getElementById('cashierModal').classList.add('active');
+    }
+
+    function switchCashierTab(tab) {
+      const depView = document.getElementById('depositView');
+      const wdrView = document.getElementById('withdrawView');
+      const depBtn = document.getElementById('tabDepositBtn');
+      const wdrBtn = document.getElementById('tabWithdrawBtn');
+
+      if (tab === 'deposit') {
+        depView.style.display = 'block';
+        wdrView.style.display = 'none';
+        depBtn.className = 'btn btn-deposit';
+        wdrBtn.className = 'btn btn-withdraw';
+      } else {
+        depView.style.display = 'none';
+        wdrView.style.display = 'block';
+        depBtn.className = 'btn btn-withdraw';
+        wdrBtn.className = 'btn btn-deposit';
+      }
+    }
+
+    async function submitDeposit() {
+      if (!token) {
+        await ensureLoginState();
+        if (!token) { openAuthModal(); return; }
+      }
+      const amount = Number(document.getElementById('depositAmount').value);
+      const trx = document.getElementById('depositTrx').value.trim();
+      const gateway = document.getElementById('depositGateway').value;
+      if (!trx) {
+        alert('Please enter your JazzCash/EasyPaisa Transaction ID (TRX).');
+        return;
+      }
+      try {
+        const res = await apiFetch('/api/v1/payments/deposit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amountPkr: amount, gateway, trxId: trx })
+        });
+        const json = await res.json();
+        if (json.ok) {
+          alert(`✅ Deposit request of PKR ${amount} submitted successfully!\nReference: ${trx}\nStatus: PENDING ADMIN APPROVAL\nCheck Admin Panel to review and 1-click approve.`);
+          closeModal('cashierModal');
+          document.getElementById('depositTrx').value = '';
+        } else {
+          alert('Deposit error: ' + (json.error?.message || 'Failed'));
+        }
+      } catch (err) {
+        alert('Network error submitting deposit.');
+      }
+    }
+
+    async function submitWithdraw() {
+      if (!token) {
+        await ensureLoginState();
+        if (!token) { openAuthModal(); return; }
+      }
+      const amount = Number(document.getElementById('withdrawAmount').value);
+      const phone = document.getElementById('withdrawPhone').value.trim();
+      const gateway = document.getElementById('withdrawGateway').value;
+      if (!phone) {
+        alert('Please enter your mobile wallet phone number.');
+        return;
+      }
+      try {
+        const res = await apiFetch('/api/v1/payments/withdraw', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amountPkr: amount, gateway, accountPhone: phone })
+        });
+        const json = await res.json();
+        if (json.ok) {
+          alert(`✅ Cashout request of PKR ${amount} to ${phone} submitted!\nAmount is temporarily held pending admin payout approval.`);
+          closeModal('cashierModal');
+          fetchWallet();
+        } else {
+          alert('Withdrawal error: ' + (json.error?.message || 'Failed'));
+        }
+      } catch (err) {
+        alert('Network error submitting withdrawal.');
+      }
+    }
+
+    function openAuthModal() {
+      document.getElementById('authModal').classList.add('active');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    async function submitAuth() {
+      const phone = document.getElementById('authPhone').value;
+      const password = document.getElementById('authPassword').value;
+      const errBox = document.getElementById('authError');
+      errBox.innerText = '';
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone, password })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.accessToken) {
+          errBox.innerText = data.error?.message || 'Login failed. Please check phone and password.';
+          return;
+        }
+
+        token = data.accessToken;
+        localStorage.setItem('n5_player_token', token);
+        closeModal('authModal');
+        await ensureLoginState();
+        await fetchWallet();
+      } catch (err) {
+        errBox.innerText = 'Network error during login.';
+      }
+    }
+
+    function startTickerAnimation() {
+      const fakeWins = [
+        { u: 'Player_92***333', w: 'PKR 6,200', g: 'Gates of Olympus' },
+        { u: 'Player_03***771', w: 'PKR 14,000', g: 'Sweet Bonanza' },
+        { u: 'Player_92***120', w: 'PKR 3,500', g: 'Aviator' },
+        { u: 'Player_03***449', w: 'PKR 18,900', g: 'Mines Gold' },
+        { u: 'Player_92***901', w: 'PKR 5,100', g: 'Sugar Rush' }
+      ];
+      setInterval(() => {
+        const rand = fakeWins[Math.floor(Math.random() * fakeWins.length)];
+        const track = document.getElementById('tickerTrack');
+        if (track && track.children.length > 0) {
+          const item = document.createElement('div');
+          item.className = 'ticker-item';
+          item.innerHTML = `<span class="ticker-user">${rand.u}</span> won <span class="ticker-win">${rand.w}</span> on ${rand.g}`;
+          track.prepend(item);
+          if (track.children.length > 6) track.removeChild(track.lastChild);
+        }
+      }, 5000);
+    }
+
+    // ==========================================
+    // LUCKY WHEEL LOGIC
+    // ==========================================
+    const wheelPrizes = ['PKR 20', 'PKR 50', 'PKR 100', 'PKR 250', 'PKR 500', 'PKR 1,000'];
+    const wheelColors = ['#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#ef4444'];
+    let wheelRotation = 0;
+    let isSpinningWheel = false;
+
+    function drawWheel() {
+      const c = document.getElementById('wheelCanvas');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const numSlices = wheelPrizes.length;
+      const arc = (2 * Math.PI) / numSlices;
+      const cx = c.width / 2;
+      const cy = c.height / 2;
+      const r = cx - 10;
+
+      ctx.clearRect(0, 0, c.width, c.height);
+
+      for (let i = 0; i < numSlices; i++) {
+        const angle = i * arc;
+        ctx.beginPath();
+        ctx.fillStyle = wheelColors[i % wheelColors.length];
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, r, angle, angle + arc);
+        ctx.lineTo(cx, cy);
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#1e293b';
+        ctx.stroke();
+
+        // Draw Prize Text
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(angle + arc / 2);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 15px Outfit, sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 4;
+        ctx.fillText(wheelPrizes[i], r - 20, 6);
+        ctx.restore();
+      }
+
+      // Draw Center Hub
+      ctx.beginPath();
+      ctx.arc(cx, cy, 26, 0, 2 * Math.PI);
+      ctx.fillStyle = '#0f172a';
+      ctx.fill();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#f59e0b';
+      ctx.stroke();
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('N5', cx, cy + 4);
+    }
+
+    async function openWheelModal() {
+      if (!token) {
+        await ensureLoginState();
+      }
+      drawWheel();
+      document.getElementById('wheelModal').classList.add('active');
+
+      try {
+        const res = await apiFetch('/api/v1/rewards/wheel/status');
+        const json = await res.json();
+        const msgBox = document.getElementById('wheelStatusMsg');
+        const btn = document.getElementById('spinWheelBtn');
+
+        if (json.ok && json.data) {
+          if (json.data.canSpin) {
+            msgBox.innerText = '✨ Your daily free spin is ready!';
+            msgBox.style.color = '#10b981';
+            btn.disabled = false;
+            btn.innerText = '🎡 SPIN NOW (FREE)';
+            btn.className = 'btn btn-login';
+          } else {
+            const mins = Math.ceil(json.data.remainingSeconds / 60);
+            msgBox.innerText = `⏳ Next spin available in ~${mins} minutes.`;
+            msgBox.style.color = '#f59e0b';
+            btn.disabled = true;
+            btn.innerText = 'Claimed Today';
+            btn.className = 'btn btn-withdraw';
+          }
+        }
+      } catch (_) {}
+    }
+
+    async function spinWheel() {
+      if (isSpinningWheel) return;
+      if (!token) {
+        await ensureLoginState();
+        if (!token) { openAuthModal(); return; }
+      }
+      isSpinningWheel = true;
+      const btn = document.getElementById('spinWheelBtn');
+      btn.disabled = true;
+      btn.innerText = 'Spinning...';
+
+      try {
+        const res = await apiFetch('/api/v1/rewards/wheel/spin', {
+          method: 'POST'
+        });
+        const json = await res.json();
+        if (!json.ok) {
+          alert(json.error?.message || 'Could not spin wheel');
+          isSpinningWheel = false;
+          btn.disabled = false;
+          btn.innerText = 'SPIN NOW';
+          return;
+        }
+
+        const sliceIndex = json.data.sliceIndex; // 0 to 5
+        const prizePkr = json.data.prizePkr;
+        const sliceAngle = 360 / wheelPrizes.length;
+
+        // Calculate rotation so needle at top lands on sliceIndex
+        // Slices start at 3 o'clock (0 deg). Top needle is at 12 o'clock (270 deg).
+        const targetSliceCenter = sliceIndex * sliceAngle + sliceAngle / 2;
+        const stopAngle = (270 - targetSliceCenter + 360) % 360;
+        const totalSpins = 5 * 360; // 5 full revolutions
+        wheelRotation += totalSpins + stopAngle - (wheelRotation % 360);
+
+        const canvas = document.getElementById('wheelCanvas');
+        canvas.style.transform = `rotate(${wheelRotation}deg)`;
+
+        setTimeout(() => {
+          isSpinningWheel = false;
+          alert(`🎉 CONGRATULATIONS!\nYou won PKR ${prizePkr} from the Daily Lucky Wheel!\nCredited directly to your wallet.`);
+          fetchWallet();
+          openWheelModal(); // Refresh cooldown status
+        }, 4600);
+      } catch (err) {
+        alert('Network error spinning wheel.');
+        isSpinningWheel = false;
+        btn.disabled = false;
+      }
+    }
+
+    // ==========================================
+    // REFERRAL PROGRAM LOGIC
+    // ==========================================
+    async function openReferralModal() {
+      document.getElementById('referralModal').classList.add('active');
+
+      const host = window.location.origin;
+      const defaultRefCode = 'N5C3C638F2';
+      const fallbackLink = `${host}/lobby?ref=${defaultRefCode}`;
+      const linkElem = document.getElementById('refLinkText');
+
+      // Pre-populate with valid link immediately so it NEVER stays stuck on "Loading link..."
+      if (linkElem.innerText === 'Loading link...' || linkElem.innerText === 'Generating link...' || !linkElem.getAttribute('data-full-link')) {
+        linkElem.innerText = fallbackLink;
+        linkElem.setAttribute('data-full-link', fallbackLink);
+      }
+
+      if (!token) {
+        await ensureLoginState();
+      }
+
+      try {
+        const res = await apiFetch('/api/v1/referral');
+        const json = await res.json();
+        if (json.ok && json.data) {
+          const code = json.data.code || defaultRefCode;
+          const link = `${host}/lobby?ref=${code}`;
+          linkElem.innerText = link;
+          linkElem.setAttribute('data-full-link', link);
+
+          const sum = json.data.summary;
+          if (sum) {
+            document.getElementById('refTotalInvited').innerText = sum.total || 0;
+            const commPkr = ((sum.rewarded || 0) * 10).toFixed(2);
+            document.getElementById('refCommission').innerText = `PKR ${commPkr}`;
+          }
+        } else {
+          linkElem.innerText = fallbackLink;
+          linkElem.setAttribute('data-full-link', fallbackLink);
+        }
+      } catch (err) {
+        linkElem.innerText = fallbackLink;
+        linkElem.setAttribute('data-full-link', fallbackLink);
+      }
+    }
+
+    function copyRefLink() {
+      const link = document.getElementById('refLinkText').getAttribute('data-full-link') || document.getElementById('refLinkText').innerText;
+      navigator.clipboard.writeText(link).then(() => {
+        alert('✅ Referral link copied to clipboard!\nShare with friends to earn commission.');
+      }).catch(() => {
+        prompt('Copy your referral link:', link);
+      });
+    }
+
+    // ==========================================
+    // 24/7 SUPPORT WIDGET LOGIC
+    // ==========================================
+    function openSupportModal() {
+      document.getElementById('supportModal').classList.add('active');
+    }
+
+    async function submitSupportTicket() {
+      if (!token) {
+        await ensureLoginState();
+        if (!token) { openAuthModal(); return; }
+      }
+      const category = document.getElementById('ticketCategory').value;
+      const subject = document.getElementById('ticketSubject').value.trim();
+      const message = document.getElementById('ticketMessage').value.trim();
+
+      if (!subject || !message) {
+        alert('Please enter both subject and message details.');
+        return;
+      }
+
+      try {
+        const res = await apiFetch('/api/v1/support/tickets', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ category, subject, message })
+        });
+        const json = await res.json();
+        if (json.ok) {
+          alert('✅ Support ticket submitted successfully!\nOur operator team will respond shortly in the Admin Panel.');
+          closeModal('supportModal');
+          document.getElementById('ticketSubject').value = '';
+          document.getElementById('ticketMessage').value = '';
+        } else {
+          alert('Ticket error: ' + (json.error?.message || 'Failed'));
+        }
+      } catch (_) {
+        alert('Network error submitting ticket.');
+      }
+    }
+
+    // Launch
+    window.onload = initLobby;
+  </script>
+</body>
+</html>
+

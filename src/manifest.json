@@ -1,0 +1,8 @@
+{
+  "part": 106,
+  "title": "Duplicate and Conflict Detection",
+  "canonicalApiPrefix": "/api/v1",
+  "languages": ["en", "tr", "hi", "ur", "ar"],
+  "checks": ["routes", "apiClient", "secureStorage", "features", "locales", "financialStates", "providerContracts", "legacyPlaceholders"],
+  "resolution": "canonical-manifest-wins"
+}

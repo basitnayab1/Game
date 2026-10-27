@@ -1,0 +1,3 @@
+import { strict as assert } from 'node:assert'; import { readFileSync } from 'node:fs';
+const routes=readFileSync(new URL('../backend/src/routes/index.ts',import.meta.url),'utf8'); assert.match(routes,/router\.get\('\/games\/catalog', requireAuth, getGameCatalogController\)/); assert.doesNotMatch(routes,/router\.(post|put|patch|delete)\('\/games\/catalog'/);
+const service=readFileSync(new URL('../backend/src/modules/games/catalog.service.ts',import.meta.url),'utf8'); assert.match(service,/g\.status = 'active'/); assert.match(service,/p\.status = 'active'/); assert.match(service,/LIMIT 200/); console.log('games catalog route contract passed');

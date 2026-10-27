@@ -1,0 +1,15 @@
+# =================================================================
+# N5 Game Platform — Local Development Override
+# Publishes the N5 PostgreSQL database on the loopback interface only,
+# so a locally running backend (npm run dev / npm run migrate) can reach it.
+#
+# Usage (local machine only, never on a server):
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres
+#
+# Port 5433 is used because 5432 is commonly taken by other local Postgres instances.
+# =================================================================
+
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5433:5432"

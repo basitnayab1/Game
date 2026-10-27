@@ -1,0 +1,8 @@
+{
+  "part": 103,
+  "name": "Canonical Player App Structure",
+  "languages": ["en", "tr", "hi", "ur", "ar"],
+  "canonicalApiPrefix": "/api/v1",
+  "features": ["splash","onboarding","auth","home","wallet","games","rewards","vip","referral","agent","kyc","security","notifications","support","faq","localization","responsible_gaming","account_closure","profile","settings"],
+  "status": "merge-contract"
+}

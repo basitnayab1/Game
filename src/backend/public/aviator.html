@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aviator Crash — N5 Game Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111827;
+      --border: #1e293b;
+      --red: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.4);
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.4);
+      --yellow: #f59e0b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Outfit', sans-serif; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+
+    .header {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background: rgba(17, 24, 39, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      margin-bottom: 12px;
+    }
+
+    .brand {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--red);
+      letter-spacing: 1.5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .wallet-pill {
+      background: #090d16;
+      border: 1px solid var(--green);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--green);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* MULTIPLIER HISTORY RIBBON */
+    .history-ribbon {
+      width: 100%;
+      max-width: 860px;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 8px 0;
+      margin-bottom: 12px;
+      scrollbar-width: none;
+    }
+
+    .history-ribbon::-webkit-scrollbar { display: none; }
+
+    .history-badge {
+      background: #111827;
+      border: 1px solid #1e293b;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+    }
+
+    .badge-blue { color: #38bdf8; border-color: #0284c7; }
+    .badge-purple { color: #c084fc; border-color: #9333ea; }
+    .badge-red { color: #f87171; border-color: #dc2626; }
+
+    /* FLIGHT ARENA */
+    .arena {
+      width: 100%;
+      max-width: 860px;
+      height: 380px;
+      background: radial-gradient(circle at 10% 90%, #171d2b 0%, #070a10 100%);
+      border: 2px solid #1e293b;
+      border-radius: 20px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #flightCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .multiplier-display {
+      position: absolute;
+      z-index: 10;
+      font-size: 64px;
+      font-weight: 900;
+      font-family: 'JetBrains Mono', monospace;
+      text-shadow: 0 0 30px rgba(255, 255, 255, 0.25);
+      transition: color 0.2s;
+    }
+
+    .multiplier-crashed {
+      color: var(--red);
+      text-shadow: 0 0 40px var(--red-glow);
+    }
+
+    .crash-message {
+      position: absolute;
+      top: 35%;
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--red);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      display: none;
+      z-index: 10;
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse { from { opacity: 0.8; } to { opacity: 1; } }
+
+    /* CONTROLS BOX */
+    .controls-card {
+      width: 100%;
+      max-width: 860px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      margin-top: 14px;
+      padding: 18px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .bet-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .bet-btn {
+      background: #090d16;
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .bet-btn.active {
+      background: #1e293b;
+      color: #fff;
+      border-color: var(--yellow);
+    }
+
+    .action-panel {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .bet-input-wrap {
+      flex: 1;
+      max-width: 240px;
+    }
+
+    .bet-input-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+    }
+
+    .bet-input {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+      outline: none;
+    }
+
+    .main-btn {
+      flex: 2;
+      height: 64px;
+      border-radius: 16px;
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .btn-bet {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      box-shadow: 0 0 20px var(--green-glow);
+    }
+
+    .btn-bet:hover {
+      background: linear-gradient(135deg, #059669, #047857);
+      transform: translateY(-2px);
+    }
+
+    .btn-cashout {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #000;
+      box-shadow: 0 0 25px rgba(245, 158, 11, 0.6);
+      animation: glow 0.8s infinite alternate;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); }
+      to { box-shadow: 0 0 35px rgba(245, 158, 11, 0.8); }
+    }
+
+    .main-btn small {
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0.85;
+    }
+
+    /* FOOTER LINKS */
+    .footer-bar {
+      margin-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 860px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .link-btn {
+      color: #38bdf8;
+      text-decoration: none;
+      cursor: pointer;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP HEADER -->
+  <header class="header">
+    <div class="brand">✈️ AVIATOR <span style="color:#64748b; font-size:12px; font-weight:600;">CRASH ENGINE</span></div>
+    <div class="wallet-pill" id="balanceDisplay">PKR ...</div>
+  </header>
+
+  <!-- HISTORY RIBBON -->
+  <div class="history-ribbon" id="historyRibbon">
+    <div class="history-badge badge-blue">1.45x</div>
+    <div class="history-badge badge-purple">4.82x</div>
+    <div class="history-badge badge-red">1.08x</div>
+    <div class="history-badge badge-blue">2.14x</div>
+    <div class="history-badge badge-purple">8.60x</div>
+    <div class="history-badge badge-blue">1.92x</div>
+  </div>
+
+  <!-- FLIGHT ARENA -->
+  <div class="arena" id="arena">
+    <canvas id="flightCanvas"></canvas>
+    <div class="multiplier-display" id="multText">1.00x</div>
+    <div class="crash-message" id="crashMessage">FLEW AWAY!</div>
+  </div>
+
+  <!-- CONTROLS CARD -->
+  <div class="controls-card">
+    <div class="bet-options">
+      <button class="bet-btn" onclick="setBet(20)">PKR 20</button>
+      <button class="bet-btn active" onclick="setBet(50)">PKR 50</button>
+      <button class="bet-btn" onclick="setBet(100)">PKR 100</button>
+      <button class="bet-btn" onclick="setBet(250)">PKR 250</button>
+      <button class="bet-btn" onclick="setBet(500)">PKR 500</button>
+    </div>
+
+    <div class="action-panel">
+      <div class="bet-input-wrap">
+        <div class="bet-input-label">Bet Amount (PKR)</div>
+        <input type="number" class="bet-input" id="betInput" value="50" min="10" step="10">
+      </div>
+
+      <button class="main-btn btn-bet" id="actionBtn" onclick="handleActionClick()">
+        <span id="btnMainText">BET</span>
+        <small id="btnSubText">PKR 50.00</small>
+      </button>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <span>Server-Authoritative Provably Fair • 96% RTP</span>
+    <span class="link-btn" onclick="claimFaucet()">+ Add PKR 1,000 Faucet</span>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameId = urlParams.get('game') || 'aviator-crash';
+    const sessionId = urlParams.get('session') || null;
+    let token = urlParams.get('token') || localStorage.getItem('n5_player_token') || localStorage.getItem('n5_admin_token') || '';
+    if (urlParams.get('token')) {
+      localStorage.setItem('n5_player_token', token);
+    }
+    let currentBetPkr = 50;
+
+    // Flight Game State
+    let gameState = 'IDLE'; // 'IDLE' | 'FLYING' | 'CASHED_OUT' | 'CRASHED'
+    let currentMultiplier = 1.00;
+    let roundId = null;
+    let flightAnimId = null;
+    let startTime = 0;
+    let planeX = 50;
+    let planeY = 300;
+
+    // Canvas setup
+    const canvas = document.getElementById('flightCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = canvas.parentElement.clientWidth;
+      canvas.height = canvas.parentElement.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Sound Synthesizer (AudioContext)
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playSound(type) {
+      try {
+        if (!audioCtx) audioCtx = new AudioCtx();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'start') {
+          osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.3);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'win') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+          osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
+          osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2);
+          gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        } else if (type === 'crash') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.4);
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+          osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+        }
+      } catch (_) {}
+    }
+
+    async function init() {
+      await ensureToken();
+      await fetchWallet();
+      drawIdleScene();
+    }
+
+    // No shared demo account: without a player token, sign in from the lobby first.
+    async function ensureToken() {
+      if (!token) window.location.href = '/lobby';
+      return token;
+    }
+
+    async function fetchWallet() {
+      if (!token) return;
+      try {
+        const res = await fetch('/api/v1/wallet', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const d = await res.json();
+        if (d.ok && d.data) {
+          const bal = (Number(d.data.availableMinor || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2 });
+          document.getElementById('balanceDisplay').innerText = `PKR ${bal}`;
+        }
+      } catch (_) {}
+    }
+
+    function setBet(amount) {
+      currentBetPkr = amount;
+      document.getElementById('betInput').value = amount;
+      document.querySelectorAll('.bet-btn').forEach(b => {
+        b.classList.toggle('active', b.innerText === `PKR ${amount}`);
+      });
+      if (gameState === 'IDLE') {
+        document.getElementById('btnSubText').innerText = `PKR ${amount.toFixed(2)}`;
+      }
+    }
+
+    async function handleActionClick() {
+      if (gameState === 'IDLE') {
+        startBetAndFlight();
+      } else if (gameState === 'FLYING') {
+        cashoutBet();
+      }
+    }
+
+    async function startBetAndFlight() {
+      const betVal = Number(document.getElementById('betInput').value);
+      if (!betVal || betVal < 10) {
+        alert('Minimum bet is PKR 10.');
+        return;
+      }
+      currentBetPkr = betVal;
+      const betMinor = Math.round(betVal * 100);
+
+      try {
+        const res = await fetch('/api/v1/games/crash/bet', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            ...(sessionId ? { 'x-game-session-id': sessionId } : {})
+          },
+          body: JSON.stringify({ betMinor, gameId, sessionId })
+        });
+        const json = await res.json();
+        if (!json.ok) {
+          alert('Bet failed: ' + (json.error?.message || 'Insufficient balance'));
+          return;
+        }
+
+        roundId = json.data.roundId;
+        gameState = 'FLYING';
+        currentMultiplier = 1.00;
+        startTime = performance.now();
+        playSound('start');
+
+        // Update UI Button to CASHOUT mode
+        const btn = document.getElementById('actionBtn');
+        btn.className = 'main-btn btn-cashout';
+        document.getElementById('btnMainText').innerText = 'CASH OUT';
+        document.getElementById('btnSubText').innerText = `PKR ${currentBetPkr.toFixed(2)}`;
+
+        document.getElementById('crashMessage').style.display = 'none';
+        document.getElementById('multText').className = 'multiplier-display';
+
+        fetchWallet();
+        animateFlight();
+      } catch (err) {
+        alert('Network error placing bet');
+      }
+    }
+
+    async function cashoutBet() {
+      if (gameState !== 'FLYING' || !roundId) return;
+
+      const snapshotMult = currentMultiplier;
+      try {
+        const res = await fetch('/api/v1/games/crash/cashout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ roundId, multiplier: snapshotMult })
+        });
+        const json = await res.json();
+        if (json.ok && json.data.won) {
+          gameState = 'CASHED_OUT';
+          playSound('win');
+          const winPkr = json.data.winPkr;
+          const btn = document.getElementById('actionBtn');
+          btn.className = 'main-btn btn-bet';
+          btn.style.background = '#10b981';
+          document.getElementById('btnMainText').innerText = `WON PKR ${winPkr.toFixed(2)}`;
+          document.getElementById('btnSubText').innerText = `at ${snapshotMult.toFixed(2)}x`;
+          fetchWallet();
+        } else if (json.data && json.data.crashed) {
+          triggerCrash(json.data.crashPoint);
+        }
+      } catch (err) {
+        console.error('Cashout error', err);
+      }
+    }
+
+    function animateFlight() {
+      if (gameState !== 'FLYING' && gameState !== 'CASHED_OUT') return;
+
+      const elapsed = (performance.now() - startTime) / 1000; // seconds
+      // Parabolic multiplier curve: starts slow, accelerates
+      currentMultiplier = Number((1.0 + Math.pow(elapsed * 0.9, 1.45)).toFixed(2));
+      document.getElementById('multText').innerText = `${currentMultiplier.toFixed(2)}x`;
+
+      if (gameState === 'FLYING') {
+        const cashValue = (currentBetPkr * currentMultiplier).toFixed(2);
+        document.getElementById('btnSubText').innerText = `PKR ${cashValue}`;
+      }
+
+      // Check if crash happened via periodic server poll/calculation
+      renderCanvasFlight(elapsed);
+
+      // Random crash simulation on client synced with server limit
+      flightAnimId = requestAnimationFrame(animateFlight);
+    }
+
+    // Canvas drawing
+    function renderCanvasFlight(t) {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      // Draw subtle grid
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 60) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      }
+      for (let y = 0; y < h; y += 50) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      // Parabolic flight trajectory
+      const progress = Math.min(t / 8, 1);
+      const startX = 40;
+      const startY = h - 40;
+      const targetX = startX + (w - 140) * progress;
+      const targetY = startY - (h - 100) * Math.pow(progress, 0.85);
+
+      planeX = targetX;
+      planeY = targetY;
+
+      // Glow flight curve
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.quadraticCurveTo(startX + (targetX - startX) * 0.6, startY, targetX, targetY);
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 4;
+      ctx.shadowColor = 'rgba(239, 68, 68, 0.8)';
+      ctx.shadowBlur = 15;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Fill area under curve
+      ctx.lineTo(targetX, startY);
+      ctx.lineTo(startX, startY);
+      const grad = ctx.createLinearGradient(0, targetY, 0, startY);
+      grad.addColorStop(0, 'rgba(239, 68, 68, 0.25)');
+      grad.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Draw Plane ✈️
+      ctx.save();
+      ctx.translate(targetX, targetY);
+      ctx.rotate(-0.25);
+      ctx.font = '36px sans-serif';
+      ctx.fillText('✈️', -18, 14);
+      ctx.restore();
+    }
+
+    function drawIdleScene() {
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      ctx.translate(50, h - 50);
+      ctx.font = '36px sans-serif';
+      ctx.fillText('✈️', 0, 0);
+      ctx.restore();
+    }
+
+    // Call server to notify round termination
+    async function triggerCrash(crashPoint) {
+      cancelAnimationFrame(flightAnimId);
+      gameState = 'CRASHED';
+      playSound('crash');
+
+      const mult = crashPoint || currentMultiplier;
+      document.getElementById('multText').innerText = `${mult.toFixed(2)}x`;
+      document.getElementById('multText').className = 'multiplier-display multiplier-crashed';
+      document.getElementById('crashMessage').style.display = 'block';
+
+      // Add to ribbon
+      addHistoryBadge(mult);
+
+      // Reset Button after 2.5s
+      setTimeout(() => {
+        gameState = 'IDLE';
+        roundId = null;
+        document.getElementById('crashMessage').style.display = 'none';
+        document.getElementById('multText').innerText = '1.00x';
+        document.getElementById('multText').className = 'multiplier-display';
+        const btn = document.getElementById('actionBtn');
+        btn.className = 'main-btn btn-bet';
+        btn.style.background = '';
+        document.getElementById('btnMainText').innerText = 'BET';
+        document.getElementById('btnSubText').innerText = `PKR ${currentBetPkr.toFixed(2)}`;
+        drawIdleScene();
+        fetchWallet();
+      }, 2500);
+    }
+
+    function addHistoryBadge(mult) {
+      const ribbon = document.getElementById('historyRibbon');
+      const badge = document.createElement('div');
+      const colorClass = mult >= 8 ? 'badge-purple' : (mult >= 2 ? 'badge-blue' : 'badge-red');
+      badge.className = `history-badge ${colorClass}`;
+      badge.innerText = `${mult.toFixed(2)}x`;
+      ribbon.prepend(badge);
+    }
+
+    async function claimFaucet() {
+      if (!token) return;
+      try {
+        const res = await fetch('/api/v1/games/play/faucet', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const d = await res.json();
+        if (d.ok) {
+          alert('🎉 +PKR 1,000 credited to wallet!');
+          fetchWallet();
+        } else {
+          alert('Faucet unavailable: ' + (d.error?.message || 'Demo faucet disabled.'));
+        }
+      } catch (_) {
+        alert('Demo faucet is not available.');
+      }
+    }
+
+    window.onload = init;
+  </script>
+</body>
+</html>
+

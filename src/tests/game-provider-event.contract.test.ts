@@ -1,0 +1,11 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+const root = join(process.cwd());
+const service = readFileSync(join(root, 'backend/src/modules/games/provider-event.service.ts'), 'utf8');
+const routes = readFileSync(join(root, 'backend/src/routes/index.ts'), 'utf8');
+if (!service.includes('ON CONFLICT (provider,event_id) DO NOTHING')) throw new Error('provider event idempotency missing');
+if (!service.includes('verifyWebhook')) throw new Error('signature verification missing');
+if (!service.includes("UPDATE game_sessions SET status=$1")) throw new Error('session update missing');
+if (service.includes('ledger_entries') || service.includes('wallet_accounts')) throw new Error('provider event must not mutate financial tables');
+if (!routes.includes("router.post('/webhooks/games/:provider', receiveGameProviderEvent)")) throw new Error('provider event route missing');
+console.log('PASS game-provider-event contract');

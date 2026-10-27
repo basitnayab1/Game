@@ -1,0 +1,1 @@
+Part 83 — Player State Repository Contracts. Shared UI state contracts for authenticated session, wallet, games, rewards, KYC, support and settings repositories. Server remains authoritative for financial/security state.

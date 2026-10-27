@@ -1,0 +1,1 @@
+-- N5 production-readiness migration contract\n-- Apply only after reviewing the complete migration chain.\n-- Financial history remains append-only.\nCREATE INDEX IF NOT EXISTS idx_audit_events_created_at ON audit_events(created_at);\nCREATE INDEX IF NOT EXISTS idx_security_events_created_at ON security_events(created_at);\n

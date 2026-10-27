@@ -1,0 +1,2 @@
+import { strict as assert } from 'node:assert'; import { getGameCatalog } from '../backend/src/modules/games/catalog.service.js';
+const calls:any[]=[]; const db={query:async(sql:string,params?:unknown[])=>{calls.push({sql,params});return {rows:[]};},transaction:async()=>{throw new Error('unused')}}; await getGameCatalog(db as any,{category:'Slots'}); assert.equal(calls.length,1); assert.match(calls[0].sql,/g\.category = \$1/); assert.match(calls[0].sql,/JOIN game_providers/); console.log('games catalog service contract passed');

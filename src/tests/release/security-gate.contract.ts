@@ -1,0 +1,1 @@
+export const securityGateChecks = [\n  'HTTPS/TLS',\n  'secret management',\n  'authentication and session revocation',\n  'authorization',\n  'rate limiting',\n  'idempotency',\n  'webhook signature verification',\n  'audit logging',\n  'private KYC document storage',\n  'no sensitive data in logs'\n] as const;\n

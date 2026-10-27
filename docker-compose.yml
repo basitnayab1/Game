@@ -1,0 +1,109 @@
+version: '3.8'
+
+# =================================================================
+# N5 Game Platform — Production Docker Compose Orchestration
+# Private Database Networking, Explicit CORS, HTTPS Reverse Proxy,
+# Healthchecks & Dependency Ordering
+# =================================================================
+
+services:
+  # ===============================================================
+  # 1. PostgreSQL Database 16 (Isolated Private Network)
+  # ===============================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: n5-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-n5_game}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD environment variable is required}
+    volumes:
+      - n5_pgdata:/var/lib/postgresql/data
+      - ./src/database/migrations:/docker-entrypoint-initdb.d:ro
+    networks:
+      - backend-network
+    # Notice: Host ports (5432:5432) are intentionally NOT published
+    # to protect the database on a private internal network.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-n5_game}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  # ===============================================================
+  # 2. N5 Fullstack App (Backend + Admin + Lobby + Games)
+  # ===============================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: n5-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - backend-network
+    # Notice: Port 8080 is internal to backend-network.
+    # Public incoming traffic flows exclusively through the HTTPS reverse proxy.
+    environment:
+      PORT: 8080
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-n5_game}
+      AUTO_MIGRATE: "true"
+      MIGRATIONS_DIR: "/app/database/migrations"
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET environment variable is required}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET environment variable is required}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://n5game.com,https://admin.n5game.com}
+      API_PREFIX: /api/v1
+      APP_NAME: ${APP_NAME:-N5 Game}
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8080/api/v1/health/live', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ===============================================================
+  # 3. HTTPS Reverse Proxy (Nginx with Modern TLS & Security Headers)
+  # ===============================================================
+  proxy:
+    image: nginx:1.25-alpine
+    container_name: n5-proxy
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - frontend-public
+      - backend-network
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://127.0.0.1/nginx-health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+# =================================================================
+# Networks Definition: Public Frontend vs Isolated Backend
+# =================================================================
+networks:
+  frontend-public:
+    driver: bridge
+  backend-network:
+    driver: bridge
+
+# =================================================================
+# Persistent Volumes
+# =================================================================
+volumes:
+  n5_pgdata:
+    driver: local

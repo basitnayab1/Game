@@ -1,0 +1,106 @@
+{
+  "archives": 118,
+  "copied": 212,
+  "identical": 0,
+  "conflicts": [
+    {
+      "path": "manifest.json",
+      "existing": {
+        "archive": "N5_PART106_Duplicate_Conflict_Detection.zip",
+        "sha256": "3ec2ce0da722c8be1cba2a29665b821d68864d9582b4833738e3e27e56af2662"
+      },
+      "incoming": {
+        "archive": "N5_PART118_Master_Merge_Audit.zip",
+        "sha256": "a1ad8d3cfef42aff6a964afa3501a1d4b3cd4049be120e66810aaf63f2cf4dac"
+      }
+    },
+    {
+      "path": "backend/tsconfig.json",
+      "existing": {
+        "archive": "N5_PART22_Backend_Foundation.zip",
+        "sha256": "1a53d4876dbb8be9ac7135eeebfadf4738d821c4b817118f18aae1b3e74b473f"
+      },
+      "incoming": {
+        "archive": "N5_PART23_Authentication_User_Accounts.zip",
+        "sha256": "0494c0c204a81a308b385b758edacf5b85a1aa083b821b0ac82301daea53fdf8"
+      }
+    },
+    {
+      "path": "backend/src/server.ts",
+      "existing": {
+        "archive": "N5_PART22_Backend_Foundation.zip",
+        "sha256": "676f97d558a8c6d3836d35ee800735993dda7430aba36c95db612a31cf2d1e86"
+      },
+      "incoming": {
+        "archive": "N5_PART23_Authentication_User_Accounts.zip",
+        "sha256": "29147b8cf0810a388b6d7f0614b0cc3aef27020a54bd88242218a4cab9a9c6ae"
+      }
+    },
+    {
+      "path": "backend/src/config/env.ts",
+      "existing": {
+        "archive": "N5_PART22_Backend_Foundation.zip",
+        "sha256": "ff7804886a26dd6cf7f1d60469003aa3eeca23e48d601d7aae3d3f5514306162"
+      },
+      "incoming": {
+        "archive": "N5_PART23_Authentication_User_Accounts.zip",
+        "sha256": "ff63814a2438915e1328b563e9e6f6cc20c01cb2c8404dceb8dddedfdf5c0e5c"
+      }
+    },
+    {
+      "path": "backend/src/app.ts",
+      "existing": {
+        "archive": "N5_PART22_Backend_Foundation.zip",
+        "sha256": "4be346628d75f461a2956b4db5d8e8c3cd48784adf99469feb54f9b049daabd3"
+      },
+      "incoming": {
+        "archive": "N5_PART23_Authentication_User_Accounts.zip",
+        "sha256": "86baa1eefd716d94e80208bd81fb1d2268d6cb73cb295a409d33a37c897083f7"
+      }
+    },
+    {
+      "path": "backend/package.json",
+      "existing": {
+        "archive": "N5_PART22_Backend_Foundation.zip",
+        "sha256": "9824953f1ed413187ad520c430693bb1260ab6cef9482779de64c4d0944c7936"
+      },
+      "incoming": {
+        "archive": "N5_PART23_Authentication_User_Accounts.zip",
+        "sha256": "37871f168de5211199ec372033589540188265919067457e4bb8a57f2db8a003"
+      }
+    },
+    {
+      "path": "backend/.env.example",
+      "existing": {
+        "archive": "N5_PART22_Backend_Foundation.zip",
+        "sha256": "63beddbce7d81854dd4ff65aeca1c97b4cc3af63cfd1c06e9d6f7e3513210298"
+      },
+      "incoming": {
+        "archive": "N5_PART23_Authentication_User_Accounts.zip",
+        "sha256": "4969375b1d6b00709f72a27e70b10a83c01a954dbce24235a9b0de71f5d761ef"
+      }
+    },
+    {
+      "path": "lib/features/auth/presentation/login_screen.dart",
+      "existing": {
+        "archive": "N5_PART2_Splash_Onboarding.zip",
+        "sha256": "2221afa11214f37a7f6e7388f64dac01640c12b69399522ca6279f0a946e5450"
+      },
+      "incoming": {
+        "archive": "N5_PART3_Authentication.zip",
+        "sha256": "f2577cff4da712e20ff9ce7b447a5efde09f54931a672d3c6c0bbe05ac134a40"
+      }
+    },
+    {
+      "path": "lib/features/notifications/presentation/notifications_screen.dart",
+      "existing": {
+        "archive": "N5_PART19_Notifications_System_Messaging.zip",
+        "sha256": "b82f4a21fc4634f651bb1f37793f119a2344afa888dc0cfcc1d0768321c66526"
+      },
+      "incoming": {
+        "archive": "N5_PART6_Profile_Notifications_Settings.zip",
+        "sha256": "c5a4b836c059ce364996c05ddfd52f544dfc1d2a0701cd9d4b1bdbed95642326"
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+/** Central route map used to prevent path drift during final integration. */
+export const API_ROUTES = {
+  auth: '/api/v1/auth',
+  users: '/api/v1/users',
+  wallet: '/api/v1/wallet',
+  transactions: '/api/v1/transactions',
+  deposits: '/api/v1/deposits',
+  withdrawals: '/api/v1/withdrawals',
+  games: '/api/v1/games',
+  promotions: '/api/v1/promotions',
+  rewards: '/api/v1/rewards',
+  vip: '/api/v1/vip',
+  referrals: '/api/v1/referrals',
+  agents: '/api/v1/agents',
+  kyc: '/api/v1/kyc',
+  security: '/api/v1/security',
+  notifications: '/api/v1/notifications',
+  support: '/api/v1/support',
+  settings: '/api/v1/settings',
+  responsibleGaming: '/api/v1/responsible-gaming',
+  accountClosure: '/api/v1/account-closure',
+} as const;

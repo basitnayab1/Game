@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gates of Olympus — N5 Game Engine</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body {
+      background: radial-gradient(circle at 50% 20%, #151d2f 0%, #080c14 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+    .header {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      background: rgba(18, 24, 38, 0.85);
+      border: 1px solid #1e293b;
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      margin-bottom: 20px;
+    }
+    .brand { font-size: 18px; font-weight: 800; color: #f59e0b; letter-spacing: 1px; }
+    .wallet-pill {
+      background: #0f172a;
+      border: 1px solid #22c55e;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #22c55e;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .game-card {
+      width: 100%;
+      max-width: 600px;
+      background: #111827;
+      border: 2px solid #f59e0b;
+      box-shadow: 0 0 35px rgba(245, 158, 11, 0.25);
+      border-radius: 24px;
+      padding: 28px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .game-title {
+      font-size: 24px;
+      font-weight: 900;
+      color: #f8fafc;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+      text-align: center;
+    }
+    .game-subtitle {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+    }
+    .slot-frame {
+      display: flex;
+      gap: 14px;
+      background: #030712;
+      padding: 18px;
+      border-radius: 18px;
+      border: 3px solid #374151;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+      margin-bottom: 24px;
+      width: 100%;
+      max-width: 440px;
+      justify-content: center;
+    }
+    .reel {
+      width: 110px;
+      height: 120px;
+      background: linear-gradient(180deg, #1f2937 0%, #111827 50%, #1f2937 100%);
+      border: 2px solid #4b5563;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 54px;
+      user-select: none;
+      transition: transform 0.1s ease;
+    }
+    .reel.spinning {
+      animation: bounce 0.15s infinite;
+    }
+    @keyframes bounce {
+      0% { transform: translateY(-4px); }
+      50% { transform: translateY(4px); }
+      100% { transform: translateY(-4px); }
+    }
+    .banner {
+      min-height: 44px;
+      font-size: 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .win-text { color: #22c55e; animation: pulse 0.5s infinite alternate; }
+    .loss-text { color: #94a3b8; }
+    @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.08); } }
+    .bet-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .bet-btn {
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: #e2e8f0;
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s;
+    }
+    .bet-btn.active {
+      background: #f59e0b;
+      color: #000;
+      border-color: #f59e0b;
+    }
+    .spin-btn {
+      width: 100%;
+      max-width: 440px;
+      padding: 16px;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      border: none;
+      border-radius: 14px;
+      font-size: 20px;
+      font-weight: 900;
+      color: #000;
+      letter-spacing: 1px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    .spin-btn:active { transform: scale(0.98); }
+    .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .faucet-box {
+      margin-top: 18px;
+      display: flex;
+      gap: 10px;
+    }
+    .faucet-btn {
+      background: transparent;
+      border: 1px solid #3b82f6;
+      color: #60a5fa;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .faucet-btn:hover { background: rgba(59, 130, 246, 0.15); }
+    .history-card {
+      width: 100%;
+      max-width: 600px;
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      margin-top: 20px;
+      padding: 16px;
+    }
+    .history-title { font-size: 13px; font-weight: 700; color: #94a3b8; margin-bottom: 10px; text-transform: uppercase; }
+    .history-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 6px 0;
+      border-bottom: 1px solid #1e293b;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">N5 CASINO ENGINE</div>
+    <div class="wallet-pill" id="balanceDisplay">PKR ...</div>
+  </div>
+
+  <div class="game-card">
+    <div class="game-title" id="gameNameDisplay">⚡ Gates of Olympus</div>
+    <div class="game-subtitle">N5 Demonstration Slot • Server Ledger Authoritative</div>
+
+    <div class="slot-frame">
+      <div class="reel" id="reel1">💎</div>
+      <div class="reel" id="reel2">7️⃣</div>
+      <div class="reel" id="reel3">💎</div>
+    </div>
+
+    <div class="banner" id="banner">Press SPIN to play!</div>
+
+    <div class="bet-selector">
+      <button class="bet-btn" onclick="setBet(10, 1000)">PKR 10</button>
+      <button class="bet-btn active" onclick="setBet(50, 5000)">PKR 50</button>
+      <button class="bet-btn" onclick="setBet(100, 10000)">PKR 100</button>
+      <button class="bet-btn" onclick="setBet(500, 50000)">PKR 500</button>
+      <button class="bet-btn" onclick="setBet(1000, 100000)">PKR 1,000</button>
+    </div>
+
+    <button class="spin-btn" id="spinBtn" onclick="doSpin()">🎰 SPIN (PKR 50)</button>
+
+    <div class="faucet-box">
+      <button class="faucet-btn" onclick="claimFaucet()">+ Add PKR 1,000 Test Balance</button>
+      <button class="faucet-btn" onclick="refreshToken()">Re-Login / Refresh</button>
+    </div>
+  </div>
+
+  <div class="history-card">
+    <div class="history-title">Recent Spins & Ledger Output</div>
+    <div id="historyList"></div>
+  </div>
+
+  <script>
+    let token = localStorage.getItem('n5_admin_token') || localStorage.getItem('n5_player_token');
+    let currentBetMinor = 5000;
+    let currentBetPkr = 50;
+    let spinning = false;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const gameId = urlParams.get('game') || 'e2e6fbb2-3d3b-4f4a-82d7-ae61195641f1';
+    const sessionId = urlParams.get('session') || null;
+    const gameName = urlParams.get('name') || 'Gates of Olympus';
+    let token = urlParams.get('token') || localStorage.getItem('n5_player_token') || localStorage.getItem('n5_admin_token') || '';
+    if (urlParams.get('token')) {
+      localStorage.setItem('n5_player_token', token);
+    }
+    document.getElementById('gameNameDisplay').innerText = `⚡ ${gameName}`;
+
+    // No shared demo account: without a player token, sign in from the lobby first.
+    async function ensureToken() {
+      if (!token) window.location.href = '/lobby';
+      return token;
+    }
+
+    async function loadBalance() {
+      await ensureToken();
+      if (!token) return;
+      try {
+        const res = await fetch('/api/v1/wallet', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const json = await res.json();
+        if (json.ok && json.data) {
+          const pkr = (json.data.availableMinor / 100).toFixed(2);
+          document.getElementById('balanceDisplay').innerText = `PKR ${Number(pkr).toLocaleString()}`;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function setBet(pkr, minor) {
+      currentBetPkr = pkr;
+      currentBetMinor = minor;
+      document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('spinBtn').innerText = `🎰 SPIN (PKR ${pkr})`;
+    }
+
+    async function claimFaucet() {
+      await ensureToken();
+      try {
+        const res = await fetch('/api/v1/games/play/faucet', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const json = await res.json();
+        if (json.ok) {
+          document.getElementById('banner').innerHTML = `<span class="win-text">🎉 Added +PKR 1,000 Test Credits to Ledger!</span>`;
+          loadBalance();
+        } else {
+          alert('Faucet unavailable: ' + (json.error?.message || 'Demo faucet disabled.'));
+        }
+      } catch (e) {
+        alert('Demo faucet is not available.');
+      }
+    }
+
+    async function refreshToken() {
+      localStorage.removeItem('n5_player_token');
+      token = null;
+      await ensureToken();
+      loadBalance();
+    }
+
+    async function doSpin() {
+      if (spinning) return;
+      await ensureToken();
+      spinning = true;
+
+      const r1 = document.getElementById('reel1');
+      const r2 = document.getElementById('reel2');
+      const r3 = document.getElementById('reel3');
+      const spinBtn = document.getElementById('spinBtn');
+      const banner = document.getElementById('banner');
+
+      r1.classList.add('spinning');
+      r2.classList.add('spinning');
+      r3.classList.add('spinning');
+      spinBtn.disabled = true;
+      banner.innerText = 'Spinning the reels...';
+
+      // Temporary random animation
+      const symbols = ['🍒', '🍋', '🍇', '🔔', '💎', '7️⃣'];
+      const interval = setInterval(() => {
+        r1.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        r2.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        r3.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+      }, 70);
+
+      try {
+        const res = await fetch('/api/v1/games/play/spin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            ...(sessionId ? { 'x-game-session-id': sessionId } : {})
+          },
+          body: JSON.stringify({
+            gameId,
+            sessionId,
+            betMinor: currentBetMinor
+          })
+        });
+
+        const json = await res.json();
+        clearInterval(interval);
+        r1.classList.remove('spinning');
+        r2.classList.remove('spinning');
+        r3.classList.remove('spinning');
+
+        if (!json.ok) {
+          banner.innerHTML = `<span class="loss-text">⚠️ ${json.error?.message || 'Spin failed'}</span>`;
+          spinBtn.disabled = false;
+          spinning = false;
+          return;
+        }
+
+        const data = json.data;
+        r1.innerText = data.reels[0];
+        r2.innerText = data.reels[1];
+        r3.innerText = data.reels[2];
+
+        const winPkr = (data.winMinor / 100).toFixed(0);
+        if (data.isJackpot) {
+          banner.innerHTML = `<span class="win-text">🚨 JACKPOT 777! +PKR ${winPkr} (${data.multiplier}x)! 🚨</span>`;
+        } else if (data.isWin) {
+          banner.innerHTML = `<span class="win-text">🎉 WINNER! +PKR ${winPkr} (${data.multiplier}x)</span>`;
+        } else {
+          banner.innerHTML = `<span class="loss-text">No match. Better luck next spin!</span>`;
+        }
+
+        const newBal = (data.newBalanceMinor / 100).toFixed(2);
+        document.getElementById('balanceDisplay').innerText = `PKR ${Number(newBal).toLocaleString()}`;
+
+        // Append to history
+        addHistory(data.reels.join(' '), currentBetPkr, winPkr, data.isWin);
+
+      } catch (err) {
+        clearInterval(interval);
+        r1.classList.remove('spinning');
+        r2.classList.remove('spinning');
+        r3.classList.remove('spinning');
+        banner.innerHTML = `<span class="loss-text">Network error occurred</span>`;
+      } finally {
+        spinBtn.disabled = false;
+        spinning = false;
+      }
+    }
+
+    function addHistory(reels, bet, win, isWin) {
+      const container = document.getElementById('historyList');
+      const row = document.createElement('div');
+      row.className = 'history-row';
+      row.innerHTML = `
+        <span>${reels} (Bet: PKR ${bet})</span>
+        <strong style="color: ${isWin ? '#22c55e' : '#ef4444'}">${isWin ? '+PKR ' + win : '-PKR ' + bet}</strong>
+      `;
+      container.prepend(row);
+      if (container.children.length > 5) {
+        container.removeChild(container.lastChild);
+      }
+    }
+
+    loadBalance();
+  </script>
+</body>
+</html>
+
