@@ -6,6 +6,7 @@ import '../../../core/country/country_picker_sheet.dart';
 import '../../../core/localization/localization_service.dart';
 import '../../../core/navigation/n5_navigation.dart';
 import '../../../core/networking/player_api_client.dart';
+import '../../../core/update/app_updater.dart';
 import '../../../shared/widgets/balance_card.dart';
 import '../../../shared/widgets/bottom_nav_bar.dart';
 import '../../games/presentation/game_grid.dart';
@@ -30,6 +31,15 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   late Future<WalletBalance> _balance = _loadBalance();
+
+  @override
+  void initState() {
+    super.initState();
+    // Offer a newer app version once per session.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) AppUpdater.checkOnStart(context);
+    });
+  }
 
   Future<WalletBalance> _loadBalance() =>
       WalletApi(PlayerApiClient(PlayerApiClientConfig.fromEnvironment())).balance();

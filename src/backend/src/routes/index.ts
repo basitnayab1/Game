@@ -37,6 +37,7 @@ import { adminPromotions, adminPromotionUpsert, adminRewardConfigs, adminRewardC
 import { adminVipLevels, adminVipLevelUpdate } from '../modules/admin/admin-vip.controller.js';
 import { createCashierRouter } from '../modules/payments/cashier.routes.js';
 import { getWheelStatus, spinLuckyWheel } from '../modules/rewards/lucky-wheel.controller.js';
+import { getLatestAndroidRelease } from '../modules/app-release/app-release.controller.js';
 import { createAdminFinancialRouter } from '../modules/admin/admin-financial.routes.js';
 
 /**
@@ -129,6 +130,7 @@ export function createApiRouter() {
   router.post('/games/crash/cashout', requireAuth, cashoutCrashBet);
   router.get('/games/crash/rounds/:roundId', requireAuth, getCrashRoundStatus);
   router.post('/games/crash/verify', verifyCrashFairnessController);
+  router.get('/app/android/latest', getLatestAndroidRelease);
   router.post('/games/play/spin', requireAuth, spinGameController);
   router.post('/games/spin', requireAuth, spinGameController);
   if (process.env.NODE_ENV !== 'production') {

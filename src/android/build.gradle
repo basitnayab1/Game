@@ -3,5 +3,14 @@ allprojects {
 }
 rootProject.buildDir = "../build"
 subprojects { project.buildDir = "${rootProject.buildDir}/${project.name}" }
+// ota_update still compiles against SDK 28, but the AndroidX libraries it pulls in
+// need 31+; compile every plugin library against SDK 34.
+subprojects {
+    afterEvaluate { project ->
+        if (project.plugins.hasPlugin("com.android.library")) {
+            project.android { compileSdkVersion 34 }
+        }
+    }
+}
 subprojects { project.evaluationDependsOn(":app") }
 tasks.register("clean", Delete) { delete rootProject.buildDir }

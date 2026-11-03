@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../core/auth/auth_repository.dart';
 import '../../../core/config/app_routes.dart';
 import '../../../core/localization/localization_service.dart';
 import '../../../core/navigation/n5_navigation.dart';
 import '../../../core/networking/player_api_client.dart';
+import '../../../core/update/app_updater.dart';
 import '../../security/presentation/security_devices_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -279,10 +281,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
           ),
           const SizedBox(height: 22),
-          const Center(
-            child: Text(
-              'N5 GAME • Version 1.0.0',
-              style: TextStyle(color: Color(0xFF6F7889), fontSize: 12),
+          _SettingsCard(
+            title: 'App',
+            children: [
+              _ActionRow(
+                icon: Icons.system_update_rounded,
+                title: 'Check for Updates',
+                onTap: () => AppUpdater.checkManually(context),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Center(
+            child: FutureBuilder<PackageInfo>(
+              future: PackageInfo.fromPlatform(),
+              builder: (context, snap) => Text(
+                snap.hasData ? 'N5 GAME • Version ${snap.data!.version} (${snap.data!.buildNumber})' : 'N5 GAME',
+                style: const TextStyle(color: Color(0xFF6F7889), fontSize: 12),
+              ),
             ),
           ),
           const SizedBox(height: 5),
