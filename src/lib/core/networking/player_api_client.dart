@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../storage/secure_storage.dart';
 
@@ -28,16 +29,20 @@ class PlayerApiClientConfig {
     if (envUrl.isNotEmpty) {
       return envUrl;
     }
-    return 'https://payroll-petition-missile-feeling.trycloudflare.com/api/v1';
+    return 'https://api.n5gamez.com/api/v1';
   }
 
   factory PlayerApiClientConfig.fromEnvironment() {
     final active = currentBaseUrl;
-    const defaultCandidates = [
-      'https://payroll-petition-missile-feeling.trycloudflare.com/api/v1',
-      'http://192.168.18.7:8080/api/v1',
-      'http://10.0.2.2:8080/api/v1',
-      'http://127.0.0.1:8080/api/v1',
+    final defaultCandidates = [
+      'https://api.n5gamez.com/api/v1',
+      'https://169-58-20-195.sslip.io/api/v1',
+      // Local backends only exist on a developer machine.
+      if (kDebugMode) ...[
+        'http://192.168.18.7:8080/api/v1',
+        'http://10.0.2.2:8080/api/v1',
+        'http://127.0.0.1:8080/api/v1',
+      ],
     ];
     final ordered = [
       active,
@@ -106,14 +111,23 @@ class PlayerApiClient {
                 tried.add(clean);
                 request.extra['n5TriedUrls'] = tried;
                 request.baseUrl = clean;
-                PlayerApiClientConfig.setActiveBaseUrl(clean);
-                _dio.options.baseUrl = clean;
                 try {
                   final retryResponse = await _dio.fetch(request);
+                  // Switch servers only once one has actually answered, so a failed
+                  // attempt can never leave the app pointed at an unreachable address.
+                  PlayerApiClientConfig.setActiveBaseUrl(clean);
+                  _dio.options.baseUrl = clean;
                   handler.resolve(retryResponse);
                   return;
-                } catch (_) {
-                  // Continue to next candidate
+                } on DioException catch (e) {
+                  // The server answered (4xx/5xx): that is the real result, not a connection problem.
+                  if (e.response != null) {
+                    PlayerApiClientConfig.setActiveBaseUrl(clean);
+                    _dio.options.baseUrl = clean;
+                    handler.next(e);
+                    return;
+                  }
+                  // Otherwise continue to the next candidate.
                 }
               }
             }
@@ -241,6 +255,13 @@ class PlayerApiClient {
     Options? options,
   }) =>
       _dio.put(path, data: data, options: options);
+
+  Future<Response<dynamic>> patch(
+    String path, {
+    Object? data,
+    Options? options,
+  }) =>
+      _dio.patch(path, data: data, options: options);
 
   Future<Response<dynamic>> delete(String path, {Options? options}) =>
       _dio.delete(path, options: options);

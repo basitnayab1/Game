@@ -1,14 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../../core/config/app_routes.dart';
 import '../../../core/navigation/n5_navigation.dart';
-
-enum ClosureStatus {
-  notRequested,
-  pendingVerification,
-  pendingObligations,
-  processing,
-  closed,
-}
+import '../../../core/networking/player_api_client.dart';
 
 class AccountClosureScreen extends StatefulWidget {
   const AccountClosureScreen({super.key});
@@ -18,21 +12,62 @@ class AccountClosureScreen extends StatefulWidget {
 }
 
 class _AccountClosureScreenState extends State<AccountClosureScreen> {
-  ClosureStatus _status = ClosureStatus.notRequested;
+  final _client = PlayerApiClient(PlayerApiClientConfig.fromEnvironment());
   bool _confirmed = false;
+  bool _busy = false;
+  bool _loading = true;
+
+  /// The server's closure request status, or null when none is open.
+  String? _status;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final r = await _client.get('/account-closure');
+      final data = (r.data as Map)['data'];
+      final status = data is Map ? data['status'] as String? : null;
+      _status = status == 'CANCELLED' ? null : status;
+    } catch (_) {
+      _status = null;
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   String get _statusText {
     switch (_status) {
-      case ClosureStatus.notRequested:
+      case null:
         return 'No closure request';
-      case ClosureStatus.pendingVerification:
-        return 'Pending security verification';
-      case ClosureStatus.pendingObligations:
-        return 'Checking pending obligations';
-      case ClosureStatus.processing:
-        return 'Closure processing';
-      case ClosureStatus.closed:
+      case 'CLOSED':
         return 'Account closed';
+      default:
+        return 'Closure requested — our team will review it';
+    }
+  }
+
+  Future<void> _call(String path, String success) async {
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _client.post(path, data: const {});
+      messenger.showSnackBar(SnackBar(content: Text(success)));
+      await _load();
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      final error = body is Map ? body['error'] : null;
+      final code = error is Map ? error['code'] : null;
+      messenger.showSnackBar(SnackBar(
+        content: Text(code == 'PENDING_OBLIGATIONS'
+            ? 'Finish pending transactions and support cases before closing your account.'
+            : 'Request failed. Try again.'),
+      ));
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -43,33 +78,13 @@ class _AccountClosureScreenState extends State<AccountClosureScreen> {
       );
       return;
     }
-
-    // Demo UI flow only. Production state must come from the backend.
-    setState(() => _status = ClosureStatus.pendingVerification);
-  }
-
-  void _advanceDemo() {
-    setState(() {
-      switch (_status) {
-        case ClosureStatus.pendingVerification:
-          _status = ClosureStatus.pendingObligations;
-          break;
-        case ClosureStatus.pendingObligations:
-          _status = ClosureStatus.processing;
-          break;
-        case ClosureStatus.processing:
-          _status = ClosureStatus.closed;
-          break;
-        case ClosureStatus.notRequested:
-        case ClosureStatus.closed:
-          break;
-      }
-    });
+    _call('/account-closure', 'Closure request sent.');
   }
 
   @override
   Widget build(BuildContext context) {
-    final closed = _status == ClosureStatus.closed;
+    final closed = _status == 'CLOSED';
+    final requested = _status != null && !closed;
 
     return N5BackScope(
       fallbackRoute: AppRoutes.profile,
@@ -78,123 +93,81 @@ class _AccountClosureScreenState extends State<AccountClosureScreen> {
           leading: const N5BackButton(fallbackRoute: AppRoutes.profile),
           title: const Text('Account Closure'),
         ),
-        body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(.10),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  closed ? Icons.check_circle_outline : Icons.lock_outline,
-                  size: 34,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Account Closure',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(.10),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(closed ? Icons.check_circle_outline : Icons.lock_outline, size: 34),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Account Closure', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Text(_statusText),
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(_statusText),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'Before closing your account',
-            style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          _item(
-            Icons.account_balance_wallet_outlined,
-            'Pending balance and transactions',
-            'Any unresolved financial activity may need to be reviewed before closure.',
-          ),
-          _item(
-            Icons.support_agent,
-            'Open support cases',
-            'Open issues may remain under review until they are resolved or otherwise handled.',
-          ),
-          _item(
-            Icons.verified_user_outlined,
-            'Security verification',
-            'A security check may be required before the closure request is accepted.',
-          ),
-          _item(
-            Icons.description_outlined,
-            'Required records',
-            'Certain records may need to be retained for applicable legal, regulatory, security or financial obligations.',
-          ),
-          const SizedBox(height: 18),
-          if (!closed) ...[
-            CheckboxListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _confirmed,
-              onChanged: (v) => setState(() => _confirmed = v ?? false),
-              title: const Text('I want to request closure of my N5 Game account.'),
-              subtitle: const Text(
-                'I understand that closure processing may require verification and review of pending obligations.',
+                  const SizedBox(height: 20),
+                  const Text('Before closing your account', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  _item(
+                    Icons.account_balance_wallet_outlined,
+                    'Pending balance and transactions',
+                    'Pending deposits or withdrawals must finish before the account can be closed.',
+                  ),
+                  _item(
+                    Icons.support_agent,
+                    'Open support cases',
+                    'Open support cases must be resolved first.',
+                  ),
+                  _item(
+                    Icons.description_outlined,
+                    'Required records',
+                    'Some records are kept for legal, security and financial reasons after closure.',
+                  ),
+                  const SizedBox(height: 18),
+                  if (requested)
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _busy ? null : () => _call('/account-closure/cancel', 'Closure request cancelled.'),
+                        child: const Text('Cancel Closure Request'),
+                      ),
+                    )
+                  else if (!closed) ...[
+                    CheckboxListTile(
+                      contentPadding: EdgeInsets.zero,
+                      value: _confirmed,
+                      onChanged: (v) => setState(() => _confirmed = v ?? false),
+                      title: const Text('I want to request closure of my N5 Game account.'),
+                      controlAffinity: ListTileControlAffinity.leading,
+                    ),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _busy ? null : _requestClosure,
+                        child: const Text('Request Account Closure'),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _status == ClosureStatus.notRequested
-                    ? _requestClosure
-                    : null,
-                child: const Text('Request Account Closure'),
-              ),
-            ),
-            if (_status != ClosureStatus.notRequested) ...[
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: _advanceDemo,
-                child: const Text('Continue Demo Status Flow'),
-              ),
-            ],
-          ] else
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Theme.of(context).dividerColor,
-                ),
-              ),
-              child: const Text(
-                'The account-closure request is recorded locally in this prototype. '
-                'Production closure must be confirmed by the backend.',
-                style: TextStyle(height: 1.5),
-              ),
-            ),
-          const SizedBox(height: 20),
-          Text(
-            'Production note: account closure must be server-authoritative. '
-            'The app must not delete or alter financial/KYC/audit records directly.',
-            style: TextStyle(
-              color: Theme.of(context).textTheme.bodySmall?.color,
-              height: 1.45,
-            ),
-          ),
-        ],
       ),
-    ),
     );
   }
 

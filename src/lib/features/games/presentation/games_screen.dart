@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'game_grid.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/config/app_routes.dart';
 import '../../../core/navigation/n5_navigation.dart';
@@ -58,7 +59,6 @@ class _GamesScreenState extends State<GamesScreen> {
           title: const Text('Games', style: TextStyle(fontWeight: FontWeight.w800)),
           actions: [
             IconButton(onPressed: () => context.push(AppRoutes.gameSearch), icon: const Icon(Icons.search_rounded)),
-            IconButton(onPressed: () => context.push(AppRoutes.providerLobby), icon: const Icon(Icons.business_rounded)),
           ],
         ),
       body: Column(
@@ -130,9 +130,7 @@ class _GamesScreenState extends State<GamesScreen> {
         final game = _games[index];
         return InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () => context.push(
-            '${AppRoutes.gameDetail}?game=${Uri.encodeComponent(game.id)}&provider=${Uri.encodeComponent(game.providerId)}',
-          ),
+          onTap: () => openGame(context, game),
           child: Container(
             decoration: BoxDecoration(
               color: const Color(0xFF171E2B),

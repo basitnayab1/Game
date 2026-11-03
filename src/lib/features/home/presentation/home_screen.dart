@@ -5,9 +5,12 @@ import '../../../core/country/country_config.dart';
 import '../../../core/country/country_picker_sheet.dart';
 import '../../../core/localization/localization_service.dart';
 import '../../../core/navigation/n5_navigation.dart';
+import '../../../core/networking/player_api_client.dart';
 import '../../../shared/widgets/balance_card.dart';
 import '../../../shared/widgets/bottom_nav_bar.dart';
+import '../../games/presentation/game_grid.dart';
 import '../../localization/presentation/language_screen.dart';
+import '../../wallet/data/wallet_api.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,12 +29,17 @@ class _HomeScreenState extends State<HomeScreen> {
     ('Cards', context.tr('cards', defaultText: 'Cards'), Icons.style_rounded),
   ];
 
-  static const games = <(String, IconData, String)>[
-    ('Featured Game', Icons.stars_rounded, 'FEATURED'),
-    ('Popular Game', Icons.local_fire_department_rounded, 'HOT'),
-    ('New Game', Icons.new_releases_rounded, 'NEW'),
-    ('Live Table', Icons.table_bar_rounded, 'LIVE'),
-  ];
+  late Future<WalletBalance> _balance = _loadBalance();
+
+  Future<WalletBalance> _loadBalance() =>
+      WalletApi(PlayerApiClient(PlayerApiClientConfig.fromEnvironment())).balance();
+
+  /// Opens [route] and refreshes the balance when the player comes back.
+  void _openAndRefresh(String route) {
+    context.push(route).then((_) {
+      if (mounted) setState(() => _balance = _loadBalance());
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,13 +136,20 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            BalanceCard(
-              balance: '0.00',
-              onDeposit: () => context.push(AppRoutes.deposit),
-              onWithdraw: () => context.push(AppRoutes.withdrawal),
+            FutureBuilder<WalletBalance>(
+              future: _balance,
+              builder: (context, snap) => BalanceCard(
+                balance: snap.hasData ? formatMinor(snap.data!.availableMinor) : '--',
+                onDeposit: () => _openAndRefresh(AppRoutes.deposit),
+                onWithdraw: () => _openAndRefresh(AppRoutes.withdrawal),
+              ),
             ),
             const SizedBox(height: 14),
-            _welcomeCard(context),
+            InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: () => _openAndRefresh(AppRoutes.dailyRewards),
+              child: _welcomeCard(context),
+            ),
             const SizedBox(height: 18),
             Text(
               context.tr('categories', defaultText: 'Categories'),
@@ -178,29 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 10),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: games.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: .95),
-              itemBuilder: (context, index) {
-                final game = games[index];
-                return InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () => context.push('${AppRoutes.gameDetail}?game=${Uri.encodeComponent(game.$1)}'),
-                  child: Container(
-                    decoration: BoxDecoration(color: const Color(0xFF171E2B), borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFF293244))),
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(game.$2, size: 48, color: const Color(0xFF8B7CFF)),
-                      const SizedBox(height: 10),
-                      Text(game.$1, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 5),
-                      Text(game.$3, style: const TextStyle(color: Color(0xFFF5C542), fontSize: 11, fontWeight: FontWeight.w700)),
-                    ]),
-                  ),
-                );
-              },
-            ),
+            const GameGrid(limit: 6, embedded: true),
           ],
         ),
       ),
@@ -240,9 +233,18 @@ class _HomeScreenState extends State<HomeScreen> {
           style: const TextStyle(color: Color(0xFFF5C542), fontWeight: FontWeight.w800, letterSpacing: 1.2),
         ),
         const SizedBox(height: 7),
-        Text(
-          context.tr('welcome_subtitle', defaultText: 'Discover games, promotions and rewards'),
-          style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
+        const Row(
+          children: [
+            Icon(Icons.casino_outlined, color: Colors.white),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Spin the free Daily Lucky Wheel',
+                style: TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
+              ),
+            ),
+            Icon(Icons.chevron_right_rounded, color: Colors.white70),
+          ],
         ),
       ],
     ),

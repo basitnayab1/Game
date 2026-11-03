@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/localization/localization_service.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
@@ -23,6 +24,9 @@ class N5GameApp extends StatelessWidget {
           theme: N5Theme.dark(),
           locale: activeLang.locale,
           supportedLocales: LocalizationService.supportedLanguages.map((l) => l.locale).toList(),
+          // Built-in widget strings (text fields, dialogs, pickers) for every app language;
+          // without them those widgets fail to build in any language other than English.
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
           routerConfig: appRouter,
           builder: (context, child) {
             return Directionality(

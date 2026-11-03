@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/storage/secure_storage.dart';
 import '../../../core/navigation/n5_navigation.dart';
 import '../../../core/networking/player_api_client.dart';
 import '../data/game_catalog_api.dart';
@@ -39,11 +40,17 @@ class _GameDetailScreenState extends State<GameDetailScreen> {
         if (!mounted) return;
 
         final rawUrl = result.launchUrl;
-        final targetUrl = rawUrl.startsWith('http')
-            ? rawUrl
-            : '${PlayerApiClientConfig.currentBaseUrl}$rawUrl';
-
-        final uri = Uri.parse(targetUrl);
+        var uri = rawUrl.startsWith('http')
+            ? Uri.parse(rawUrl)
+            // In-house games are pages on the API's own host, outside the /api/v1 prefix.
+            : Uri.parse(PlayerApiClientConfig.currentBaseUrl).resolve(rawUrl);
+        if (result.isLocal) {
+          // Hand the session to the game page in the fragment, which never leaves the phone.
+          final token = await const SecureStorage().readAccessToken();
+          if (token != null && token.isNotEmpty) {
+            uri = uri.replace(fragment: 'token=$token');
+          }
+        }
         final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
         if (!launched && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

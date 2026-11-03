@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../networking/player_api_client.dart';
 
 class AuthSession {
@@ -14,13 +16,6 @@ class AuthSession {
   });
 }
 
-class OtpChallenge {
-  final String challengeId;
-  final String? devCode;
-  final String? antiBanLink;
-  const OtpChallenge({required this.challengeId, this.devCode, this.antiBanLink});
-}
-
 class AuthRepository {
   final PlayerApiClient api;
   const AuthRepository(this.api);
@@ -33,55 +28,34 @@ class AuthRepository {
     return await _saveSession(response.data);
   }
 
-  Future<OtpChallenge> requestOtp(String phone) async {
-    final response = await api.post('/auth/otp/request', data: {'phone': phone});
-    final data = Map<String, dynamic>.from(response.data as Map);
-    return OtpChallenge(
-      challengeId: data['challengeId'] as String,
-      devCode: data['devCode'] as String?,
-      antiBanLink: data['antiBanLink'] as String?,
-    );
-  }
-
-  Future<void> register({
+  /// Creates the account and signs the player straight in.
+  Future<AuthSession> register({
     required String phone,
     required String dob,
     required String password,
+    String? referralCode,
   }) async {
     final response = await api.post('/auth/register', data: {
       'phone': phone,
       'dob': dob,
       'password': password,
-    });
-    final data = Map<String, dynamic>.from(response.data as Map);
-    final challengeId = data['challengeId'] as String?;
-    if (challengeId == null || challengeId.isEmpty) {
-      throw StateError('Registration did not return an OTP challenge');
-    }
-    throw RegistrationNeedsOtp(
-      challengeId: challengeId,
-      devCode: data['devCode'] as String?,
-      antiBanLink: data['antiBanLink'] as String?,
-    );
-  }
-
-  Future<AuthSession> verifyOtp(String challengeId, String code) async {
-    final response = await api.post('/auth/otp/verify', data: {
-      'challengeId': challengeId,
-      'code': code,
+      if (referralCode != null && referralCode.trim().isNotEmpty) 'referralCode': referralCode.trim(),
     });
     return await _saveSession(response.data);
   }
 
-  Future<AuthSession?> checkOtpStatus(String challengeId) async {
-    try {
-      final response = await api.get('/auth/otp/status', queryParameters: {'challengeId': challengeId});
-      final data = Map<String, dynamic>.from(response.data as Map);
-      if (data['verified'] == true && data['session'] != null) {
-        return await _saveSession(data['session']);
-      }
-    } catch (_) {}
-    return null;
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    await api.post('/auth/change-password', data: {
+      'currentPassword': currentPassword,
+      'newPassword': newPassword,
+    });
+  }
+
+  /// The signed-in player's own profile.
+  Future<Map<String, dynamic>> me() async {
+    final response = await api.get('/users/me');
+    final body = Map<String, dynamic>.from(response.data as Map);
+    return Map<String, dynamic>.from(body['data'] as Map);
   }
 
   Future<AuthSession> refresh() async {
@@ -136,9 +110,32 @@ class AuthRepository {
   }
 }
 
-class RegistrationNeedsOtp implements Exception {
-  final String challengeId;
-  final String? devCode;
-  final String? antiBanLink;
-  const RegistrationNeedsOtp({required this.challengeId, this.devCode, this.antiBanLink});
+/// Turns a failed login or signup call into a message for the player.
+String authErrorMessage(Object error) {
+  if (error is DioException) {
+    final data = error.response?.data;
+    final body = data is Map
+        ? Map<String, dynamic>.from(data)
+        : const <String, dynamic>{};
+    switch (body['error']) {
+      case 'LOGIN_LOCKED':
+        final seconds = (body['retryAfterSeconds'] as num?)?.toInt() ?? 60;
+        return 'Bohat dafa ghalat password. $seconds second baad dobara koshish karein.';
+      case 'LOGIN_FAILED':
+        final left = (body['attemptsLeft'] as num?)?.toInt();
+        return left == null
+            ? 'Phone number ya password ghalat hai.'
+            : 'Phone number ya password ghalat hai. $left koshish baqi.';
+      case 'INVALID_REFERRAL_CODE':
+        return 'Yeh referral code ghalat hai. Check karein ya khaali chhor dein.';
+      case 'PHONE_ALREADY_REGISTERED':
+        return 'Yeh number pehle se registered hai! 1 number par sirf 1 account ban sakta hai.';
+      case 'INVALID_REQUEST':
+        return 'Maloomat theek se bharein (password kam az kam 8 characters).';
+    }
+    if (error.response == null) {
+      return 'Server se rabta nahi ho saka. Internet check karein.';
+    }
+  }
+  return 'Kuch ghalat ho gaya. Dobara koshish karein.';
 }

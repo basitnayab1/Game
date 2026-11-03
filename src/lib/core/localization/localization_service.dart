@@ -24,7 +24,9 @@ class AppLanguage {
 class LocalizationService {
   LocalizationService._();
 
-  static const String _prefKey = 'n5_selected_language';
+  // Renamed from 'n5_selected_language': older builds saved a language picked
+  // automatically from the country, so every player starts again from English.
+  static const String _prefKey = 'n5_language';
 
   static const List<AppLanguage> supportedLanguages = [
     AppLanguage(code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸', isRtl: false),
@@ -75,24 +77,6 @@ class LocalizationService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_prefKey, match.code);
     } catch (_) {}
-  }
-
-  /// Automatically select matching language for a given country code
-  static Future<void> setLanguageForCountry(String countryCode) async {
-    final code = countryCode.toUpperCase();
-    if (code == 'PK') {
-      await setLanguage('ur');
-    } else if (code == 'IN') {
-      await setLanguage('hi');
-    } else if (code == 'BD') {
-      await setLanguage('bn');
-    } else if (code == 'TR') {
-      await setLanguage('tr');
-    } else if (code == 'AE' || code == 'SA') {
-      await setLanguage('ar');
-    } else {
-      await setLanguage('en');
-    }
   }
 
   /// Translate a given key to active language

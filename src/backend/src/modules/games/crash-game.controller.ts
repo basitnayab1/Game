@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import type { DatabaseClient } from '../../core/database/database.types.js';
 import crypto from 'node:crypto';
+import { checkPlayAllowed } from '../responsibleGaming/enforcement.js';
 
 function crashStoreUnavailable(res: Response) {
   return res.status(503).json({ ok: false, error: { code: 'GAME_STORE_UNAVAILABLE', message: 'Crash game requires the PostgreSQL database to be configured.' } });
@@ -197,6 +198,9 @@ export async function placeCrashBet(req: Request, res: Response) {
       )).rows[0];
 
       if (!wallet) throw { statusCode: 404, code: 'WALLET_NOT_FOUND', message: 'Wallet account not found.' };
+      // Checked under the wallet lock, so parallel bets cannot slip past a limit together.
+      const rgBlock = await checkPlayAllowed(tx, userId, Number(bet));
+      if (rgBlock) throw rgBlock;
 
       const available = BigInt(wallet.available_minor);
       const betBig = BigInt(bet);

@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>N5 Game — Aviator, Slots & Daily Lucky Wheel</title>
+  <meta name="description" content="Download the N5 Game app. Play Aviator, Slots and the free Daily Lucky Wheel. Deposit and withdraw with Easypaisa and JazzCash. 18+ only.">
+  <meta name="theme-color" content="#07070a">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="N5 Game — Play. Fly. Win.">
+  <meta property="og:description" content="Aviator, Slots and a free Daily Lucky Wheel in one app. Easypaisa & JazzCash. 18+ only.">
+  <meta property="og:image" content="/public/brand/og.jpg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="/public/brand/favicon.png">
+  <link rel="apple-touch-icon" href="/public/brand/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Noto+Nastaliq+Urdu:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07070a;
+      --bg-2: #0d0d12;
+      --surface: #14141b;
+      --surface-2: #1b1b24;
+      --line: rgba(245, 197, 66, 0.14);
+      --line-soft: rgba(255, 255, 255, 0.07);
+      --gold: #f5c542;
+      --gold-2: #ffdd7a;
+      --gold-deep: #b9861a;
+      --text: #f6f3ea;
+      --muted: #a4a1ab;
+      --win: #2bd576;
+      --loss: #ff5a5f;
+      --radius: 18px;
+      --font: 'Outfit', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      --font-ur: 'Noto Nastaliq Urdu', 'Outfit', serif;
+      --gutter: 16px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font);
+      line-height: 1.5;
+      overflow-x: hidden;
+      padding-bottom: 84px; /* room for the mobile download bar */
+    }
+    html[lang="ur"] body { font-family: var(--font-ur); line-height: 2.05; }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+    :focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 8px; }
+
+    .wrap { width: 100%; max-width: 1160px; margin: 0 auto; padding: 0 var(--gutter); }
+    @media (min-width: 720px) { :root { --gutter: 28px; } }
+
+    /* ---------- Top bar ---------- */
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(7, 7, 10, 0.82);
+      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .topbar .wrap { display: flex; align-items: center; gap: 12px; height: 64px; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: 0.02em; font-size: 18px; }
+    .brand img { width: 38px; height: 38px; }
+    .brand span b { color: var(--gold); }
+    .topbar .spacer { flex: 1; }
+    .lang-toggle {
+      display: inline-flex; border: 1px solid var(--line-soft); border-radius: 999px; padding: 3px; font-size: 13px;
+    }
+    .lang-toggle button { padding: 5px 11px; border-radius: 999px; color: var(--muted); font-weight: 600; }
+    .lang-toggle button[aria-pressed="true"] { background: var(--surface-2); color: var(--text); }
+    .lang-toggle button.ur { font-family: var(--font-ur); line-height: 1.4; }
+    .brand { white-space: nowrap; }
+    .btn.top-cta { display: none; white-space: nowrap; }
+    @media (min-width: 720px) { .btn.top-cta { display: inline-flex; } }
+
+    /* ---------- Buttons ---------- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 12px;
+      min-height: 56px; padding: 10px 22px; border-radius: 14px;
+      font-weight: 700; transition: transform .15s ease, box-shadow .2s ease, background .2s ease;
+      text-align: start;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn svg { width: 26px; height: 26px; flex: none; }
+    .btn small { display: block; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; opacity: .75; line-height: 1.2; }
+    .btn strong { display: block; font-size: 18px; line-height: 1.2; }
+    html[lang="ur"] .btn small { text-transform: none; letter-spacing: 0; font-size: 12px; }
+    html[lang="ur"] .btn strong { font-size: 17px; line-height: 1.9; }
+    .btn-gold {
+      background: linear-gradient(180deg, var(--gold-2), var(--gold) 45%, var(--gold-deep));
+      color: #1a1203;
+      box-shadow: 0 10px 30px -8px rgba(245, 197, 66, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    }
+    .btn-gold:hover { box-shadow: 0 14px 40px -8px rgba(245, 197, 66, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.55); }
+    .btn-dark { background: var(--surface-2); border: 1px solid rgba(255, 255, 255, 0.12); color: var(--text); }
+    .btn-dark:hover { background: #23232e; }
+    .btn-sm { min-height: 40px; padding: 8px 16px; border-radius: 11px; font-size: 14px; }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; padding: 36px 0 56px; overflow: hidden; }
+    .hero::before {
+      content: ""; position: absolute; inset: -20% -10% auto -10%; height: 720px; pointer-events: none;
+      background:
+        radial-gradient(520px 340px at 72% 30%, rgba(245, 197, 66, 0.20), transparent 70%),
+        radial-gradient(420px 300px at 10% 10%, rgba(255, 90, 95, 0.10), transparent 70%);
+    }
+    .hero .wrap { position: relative; display: grid; gap: 40px; align-items: center; }
+    @media (min-width: 960px) { .hero { padding: 72px 0 96px; } .hero .wrap { grid-template-columns: 1.05fr 0.95fr; } }
+
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px;
+      background: rgba(245, 197, 66, 0.08); border: 1px solid var(--line); color: var(--gold-2);
+      font-size: 13px; font-weight: 600;
+    }
+    .eyebrow i { width: 7px; height: 7px; border-radius: 50%; background: var(--win); box-shadow: 0 0 0 4px rgba(43, 213, 118, 0.18); }
+    h1 {
+      margin-top: 18px; font-size: clamp(42px, 9vw, 76px); line-height: 1.02; font-weight: 900; letter-spacing: -0.02em;
+    }
+    h1 .gold {
+      background: linear-gradient(180deg, var(--gold-2), var(--gold) 55%, var(--gold-deep));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    html[lang="ur"] h1 { line-height: 1.75; font-size: clamp(34px, 7vw, 58px); letter-spacing: 0; }
+    .lede { margin-top: 18px; font-size: clamp(17px, 2.4vw, 20px); color: var(--muted); max-width: 34em; }
+    .lede b { color: var(--text); font-weight: 600; }
+    .cta-row { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 12px; }
+    .cta-row .btn { flex: 1 1 220px; }
+    @media (min-width: 560px) { .cta-row .btn { flex: 0 0 auto; min-width: 230px; } }
+    .cta-row .btn.is-device { order: -1; }
+    .trust { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px 18px; color: var(--muted); font-size: 14px; }
+    .trust span { display: inline-flex; align-items: center; gap: 7px; }
+    .trust svg { width: 17px; height: 17px; color: var(--gold); flex: none; }
+    .badge-18 {
+      display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%;
+      border: 2px solid var(--loss); color: var(--loss); font-size: 10px; font-weight: 800;
+    }
+
+    /* ---------- Phone mock with live Aviator demo ---------- */
+    .stage { position: relative; display: grid; place-items: center; }
+    .phone {
+      position: relative; width: min(330px, 86vw); aspect-ratio: 9 / 18.5; border-radius: 44px; padding: 12px;
+      background: linear-gradient(160deg, #2a2a33, #0c0c10 40%, #1d1d24);
+      box-shadow: 0 40px 90px -30px rgba(0, 0, 0, .9), 0 0 0 1px rgba(255, 255, 255, .08), 0 0 80px -20px rgba(245, 197, 66, .35);
+    }
+    .screen {
+      position: relative; height: 100%; border-radius: 34px; overflow: hidden;
+      background: radial-gradient(120% 70% at 50% 0%, #1b1408, #09090d 60%);
+      display: flex; flex-direction: column;
+    }
+    .notch { position: absolute; top: 9px; left: 50%; transform: translateX(-50%); width: 90px; height: 24px; border-radius: 14px; background: #000; z-index: 3; }
+    .app-head { display: flex; align-items: center; justify-content: space-between; padding: 44px 16px 10px; font-size: 12px; }
+    .app-head .bal { padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,.06); font-weight: 700; }
+    .app-head .bal b { color: var(--gold); }
+    .app-head .logo-mini { display: flex; align-items: center; gap: 6px; font-weight: 800; }
+    .app-head .logo-mini img { width: 22px; height: 22px; }
+    .history { display: flex; gap: 6px; padding: 0 16px 8px; overflow: hidden; font-size: 11px; font-weight: 700; direction: ltr; }
+    .history span { padding: 3px 8px; border-radius: 999px; background: rgba(255,255,255,.06); white-space: nowrap; }
+    .history .hi { color: #c88bff; }
+    .history .mid { color: #6fb6ff; }
+    .history .lo { color: #8fa0b8; }
+    .sky {
+      position: relative; flex: 1; margin: 0 12px; border-radius: 18px; overflow: hidden;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,.035) 0 1px, transparent 1px 38px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,.035) 0 1px, transparent 1px 38px),
+        linear-gradient(180deg, #120d05, #0b0b10);
+      direction: ltr;
+    }
+    .sky svg.curve { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .plane { position: absolute; width: 46px; height: 46px; transform: translate(-30%, -70%) rotate(-12deg); filter: drop-shadow(0 6px 14px rgba(255, 90, 95, .5)); }
+    .mult {
+      position: absolute; top: 34%; left: 0; right: 0; text-align: center;
+      font-size: 46px; font-weight: 900; letter-spacing: -0.02em; font-variant-numeric: tabular-nums;
+      text-shadow: 0 6px 30px rgba(0,0,0,.6);
+    }
+    .mult small { display: block; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--loss); height: 18px; }
+    .sky.crashed .mult { color: var(--loss); }
+    .sky.crashed .plane { opacity: 0; transition: opacity .3s; }
+    .bet-panel { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; padding: 12px; }
+    .bet-amt { border-radius: 14px; background: rgba(255,255,255,.05); padding: 9px; text-align: center; font-size: 11px; color: var(--muted); }
+    .bet-amt b { display: block; color: var(--text); font-size: 16px; }
+    .bet-btn {
+      border-radius: 14px; display: grid; place-items: center; text-align: center; font-weight: 800; font-size: 14px; line-height: 1.15;
+      background: linear-gradient(180deg, #3ae38a, #18a95a); color: #04140a; transition: background .3s;
+    }
+    .bet-btn small { display: block; font-size: 11px; font-weight: 700; opacity: .8; }
+    .sky.crashed ~ .bet-panel .bet-btn { background: linear-gradient(180deg, #ff7a7e, #d63c41); color: #1d0405; }
+    .floaty {
+      position: absolute; padding: 10px 14px; border-radius: 14px; font-size: 13px; font-weight: 700;
+      background: rgba(20, 20, 27, .92); border: 1px solid var(--line); backdrop-filter: blur(8px);
+      box-shadow: 0 20px 40px -18px rgba(0,0,0,.9); white-space: nowrap;
+      animation: bob 5s ease-in-out infinite;
+    }
+    .floaty .k { display: block; font-size: 11px; color: var(--muted); font-weight: 600; }
+    .floaty.f1 { top: 14%; left: -2%; }
+    .floaty.f2 { bottom: 18%; right: -4%; animation-delay: -2.5s; }
+    .floaty .gold { color: var(--gold); }
+    @media (max-width: 480px) { .floaty { display: none; } }
+    @keyframes bob { 50% { transform: translateY(-8px); } }
+
+    /* ---------- Ticker ---------- */
+    .ticker { border-block: 1px solid var(--line-soft); background: var(--bg-2); overflow: hidden; direction: ltr; }
+    .ticker-track { display: flex; gap: 40px; width: max-content; padding: 16px 0; animation: tick 34s linear infinite; }
+    .ticker-track span { display: inline-flex; align-items: center; gap: 12px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .ticker-track span::after { content: "✦"; color: var(--gold); font-size: 12px; }
+    @keyframes tick { to { transform: translateX(-50%); } }
+
+    /* ---------- Sections ---------- */
+    section { padding: 72px 0; }
+    @media (min-width: 960px) { section { padding: 104px 0; } }
+    .sec-head { max-width: 640px; margin-bottom: 36px; }
+    .kicker { color: var(--gold); font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; }
+    html[lang="ur"] .kicker { letter-spacing: 0; text-transform: none; font-size: 15px; }
+    h2 { margin-top: 8px; font-size: clamp(30px, 5vw, 46px); line-height: 1.1; font-weight: 800; letter-spacing: -0.015em; }
+    html[lang="ur"] h2 { line-height: 1.8; letter-spacing: 0; font-size: clamp(26px, 4.4vw, 40px); }
+    .sec-head p { margin-top: 12px; color: var(--muted); font-size: 17px; }
+
+    /* Games */
+    .games { display: grid; gap: 16px; }
+    @media (min-width: 760px) { .games { grid-template-columns: repeat(3, 1fr); } }
+    .game {
+      position: relative; overflow: hidden; border-radius: 22px; padding: 22px; min-height: 330px;
+      background: var(--surface); border: 1px solid var(--line-soft);
+      display: flex; flex-direction: column; justify-content: flex-end;
+      transition: transform .25s ease, border-color .25s ease;
+    }
+    .game:hover { transform: translateY(-4px); border-color: var(--line); }
+    .game .art { position: absolute; z-index: 0; inset: 0 0 auto 0; height: 58%; display: grid; place-items: center; overflow: hidden; }
+    .game .art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 40%, var(--surface)); }
+    .game.aviator .art { background: radial-gradient(80% 90% at 30% 100%, rgba(255, 90, 95, .35), transparent 70%), #160b0c; }
+    .game.slots .art { background: radial-gradient(80% 90% at 50% 100%, rgba(245, 197, 66, .3), transparent 70%), #15110a; }
+    .game.wheel .art { background: radial-gradient(80% 90% at 70% 100%, rgba(43, 213, 118, .28), transparent 70%), #0b1510; }
+    .game .tag {
+      position: absolute; top: 16px; inset-inline-start: 16px; z-index: 2; padding: 4px 10px; border-radius: 999px;
+      font-size: 12px; font-weight: 700; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.12);
+    }
+    .game h3 { position: relative; font-size: 24px; font-weight: 800; }
+    .game p { position: relative; color: var(--muted); margin-top: 4px; }
+    .game .stat { position: relative; margin-top: 14px; display: inline-flex; align-self: flex-start; gap: 6px; padding: 6px 12px; border-radius: 10px; background: rgba(245,197,66,.1); color: var(--gold-2); font-weight: 700; font-size: 14px; }
+    .reels { display: flex; gap: 8px; direction: ltr; position: relative; }
+    .reels span { width: 64px; height: 76px; border-radius: 14px; display: grid; place-items: center; font-size: 38px; background: linear-gradient(180deg, #221a0c, #120e07); border: 1px solid rgba(245,197,66,.25); }
+    .mini-wheel { width: 118px; height: 118px; position: relative; animation: spin 14s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .mini-plane { width: 110px; position: relative; transform: rotate(-14deg); filter: drop-shadow(0 10px 20px rgba(255,90,95,.45)); animation: bob 4s ease-in-out infinite; }
+
+    /* Features */
+    .features { display: grid; gap: 14px; }
+    @media (min-width: 640px) { .features { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1000px) { .features { grid-template-columns: repeat(3, 1fr); } }
+    .feature { padding: 22px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line-soft); }
+    .feature .ico { width: 46px; height: 46px; border-radius: 13px; display: grid; place-items: center; background: rgba(245, 197, 66, .1); color: var(--gold); margin-bottom: 14px; }
+    .feature .ico svg { width: 24px; height: 24px; }
+    .feature h3 { font-size: 19px; font-weight: 700; }
+    .feature p { margin-top: 6px; color: var(--muted); font-size: 15px; }
+    .pay-chips { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .pay-chips span { padding: 5px 10px; border-radius: 9px; font-size: 13px; font-weight: 700; background: var(--surface-2); border: 1px solid var(--line-soft); }
+    .pay-chips .ep { color: #3ee07e; }
+    .pay-chips .jc { color: #ff8a3c; }
+
+    /* Steps */
+    .steps { display: grid; gap: 14px; counter-reset: step; }
+    @media (min-width: 860px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+    .step { position: relative; padding: 24px 22px 22px; border-radius: var(--radius); background: linear-gradient(180deg, var(--surface), var(--bg-2)); border: 1px solid var(--line-soft); }
+    .step::before {
+      counter-increment: step; content: counter(step);
+      display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; margin-bottom: 16px;
+      font-weight: 900; font-size: 18px; color: #1a1203; font-family: var(--font);
+      background: linear-gradient(180deg, var(--gold-2), var(--gold-deep));
+    }
+    .step h3 { font-size: 19px; font-weight: 700; }
+    .step p { margin-top: 6px; color: var(--muted); font-size: 15px; }
+
+    /* Big CTA */
+    .final {
+      position: relative; overflow: hidden; border-radius: 28px; padding: 44px 22px; text-align: center;
+      background: radial-gradient(60% 120% at 50% 0%, rgba(245, 197, 66, .22), transparent 70%), var(--surface);
+      border: 1px solid var(--line);
+    }
+    .final img { width: 92px; height: 92px; margin: 0 auto 14px; }
+    .final h2 { margin-top: 0; }
+    .final p { color: var(--muted); margin: 10px auto 0; max-width: 32em; }
+    .final .cta-row { justify-content: center; }
+
+    /* FAQ */
+    .faq { display: grid; gap: 10px; max-width: 820px; }
+    details { border-radius: 16px; background: var(--surface); border: 1px solid var(--line-soft); }
+    summary { list-style: none; cursor: pointer; padding: 18px 20px; font-weight: 600; font-size: 17px; display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--gold); font-size: 24px; line-height: 1; transition: transform .2s; flex: none; }
+    details[open] summary::after { transform: rotate(45deg); }
+    details > div { padding: 0 20px 18px; color: var(--muted); }
+
+    /* Footer */
+    footer { border-top: 1px solid var(--line-soft); padding: 40px 0 28px; color: var(--muted); font-size: 14px; }
+    .rg { display: flex; gap: 14px; align-items: flex-start; padding: 18px; border-radius: 16px; background: var(--bg-2); border: 1px solid var(--line-soft); }
+    .rg .badge-18 { width: 40px; height: 40px; font-size: 13px; flex: none; }
+    .rg b { color: var(--text); }
+    .foot-row { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; }
+    .foot-row nav { display: flex; gap: 18px; flex-wrap: wrap; }
+    .foot-row nav a:hover { color: var(--text); }
+
+    /* Mobile sticky download bar */
+    .dock {
+      position: fixed; z-index: 60; left: 0; right: 0; bottom: 0;
+      padding: 10px var(--gutter) calc(10px + env(safe-area-inset-bottom));
+      background: rgba(10, 10, 14, .94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+      border-top: 1px solid var(--line);
+      display: flex; align-items: center; gap: 12px;
+      transform: translateY(110%); transition: transform .3s ease;
+    }
+    .dock.show { transform: none; }
+    .dock img { width: 40px; height: 40px; flex: none; }
+    .dock .txt { flex: 1; min-width: 0; font-size: 13px; color: var(--muted); line-height: 1.3; }
+    .dock .txt b { display: block; color: var(--text); font-size: 15px; }
+    html[lang="ur"] .dock .txt { line-height: 1.8; }
+    .dock .btn { min-height: 46px; padding: 8px 18px; border-radius: 12px; font-size: 15px; }
+    @media (min-width: 960px) { .dock { display: none; } body { padding-bottom: 0; } }
+
+    /* Modal */
+    .modal { position: fixed; inset: 0; z-index: 100; display: none; align-items: flex-end; justify-content: center; background: rgba(0, 0, 0, .7); padding: 0; }
+    .modal.open { display: flex; }
+    @media (min-width: 640px) { .modal { align-items: center; padding: 20px; } }
+    .sheet {
+      width: 100%; max-width: 460px; max-height: 92vh; overflow: auto;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 24px 24px 0 0;
+      padding: 24px 22px calc(22px + env(safe-area-inset-bottom));
+      animation: up .25s ease;
+    }
+    @media (min-width: 640px) { .sheet { border-radius: 24px; } }
+    @keyframes up { from { transform: translateY(30px); opacity: 0; } }
+    .sheet h3 { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+    .sheet h3 svg { width: 26px; height: 26px; color: var(--gold); }
+    .sheet > p { color: var(--muted); margin-top: 6px; }
+    .sheet ol { list-style: none; counter-reset: s; margin: 18px 0; display: grid; gap: 12px; }
+    .sheet li { counter-increment: s; display: flex; gap: 12px; align-items: flex-start; color: var(--text); }
+    .sheet li::before { content: counter(s); flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: rgba(245,197,66,.14); color: var(--gold); font-weight: 800; font-size: 14px; font-family: var(--font); line-height: 1; }
+    .sheet li span { color: var(--muted); }
+    .sheet .btn { width: 100%; margin-top: 6px; }
+    .sheet .close { margin-top: 10px; width: 100%; padding: 12px; color: var(--muted); font-weight: 600; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== Top bar ===== -->
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="#top" aria-label="N5 Game">
+        <img src="/public/brand/n5-emblem.webp" alt="" width="38" height="38">
+        <span><b>N5</b> Game</span>
+      </a>
+      <div class="spacer"></div>
+      <div class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" data-lang="en" aria-pressed="true">EN</button>
+        <button type="button" data-lang="ur" class="ur" aria-pressed="false">اردو</button>
+      </div>
+      <a class="btn btn-gold btn-sm top-cta" href="#download" data-i18n="nav_cta">Download App</a>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ===== Hero ===== -->
+    <section class="hero" id="download" style="padding-top:36px">
+      <div class="wrap">
+        <div>
+          <span class="eyebrow"><i></i><span data-i18n="eyebrow">Now on Android · Easypaisa &amp; JazzCash</span></span>
+          <h1><span data-i18n="h1a">Play. Fly.</span> <span class="gold" data-i18n="h1b">Win.</span></h1>
+          <p class="lede" data-i18n-html="lede"><b>Aviator</b>, <b>Slots</b> and a free <b>Daily Lucky Wheel</b> — all in one app. Sign up in seconds with just your phone number.</p>
+
+          <div class="cta-row">
+            <a class="btn btn-gold" href="/download/android" data-platform="android" download>
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.6 9.48l1.84-3.18a.38.38 0 00-.66-.38l-1.86 3.23a11.4 11.4 0 00-9.84 0L5.22 5.92a.38.38 0 00-.66.38L6.4 9.48A10.78 10.78 0 001 18h22a10.78 10.78 0 00-5.4-8.52zM7 15.25a1.25 1.25 0 111.25-1.25A1.25 1.25 0 017 15.25zm10 0A1.25 1.25 0 1118.25 14 1.25 1.25 0 0117 15.25z"/></svg>
+              <span><small data-i18n="android_small">Download for</small><strong>Android</strong></span>
+            </a>
+            <a class="btn btn-dark" href="#" data-platform="ios">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.73c-.02-2.28 1.86-3.38 1.95-3.43-1.06-1.55-2.71-1.77-3.3-1.79-1.4-.14-2.74.83-3.45.83-.71 0-1.8-.81-2.96-.79-1.52.02-2.93.89-3.71 2.25-1.59 2.75-.41 6.81 1.13 9.04.76 1.09 1.66 2.31 2.83 2.27 1.14-.05 1.57-.73 2.94-.73 1.37 0 1.76.73 2.96.71 1.23-.02 2-1.11 2.74-2.21.87-1.26 1.22-2.49 1.24-2.55-.03-.01-2.37-.91-2.37-3.6zM14.12 6.04c.62-.76 1.05-1.8.93-2.85-.9.04-2 .6-2.64 1.35-.57.66-1.08 1.73-.94 2.75 1 .08 2.03-.51 2.65-1.25z"/></svg>
+              <span><small data-i18n="ios_small">Get it for</small><strong>iPhone</strong></span>
+            </a>
+          </div>
+
+          <div class="trust">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg><span data-i18n="trust1">Encrypted &amp; secure</span></span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg><span data-i18n="trust2">Easypaisa &amp; JazzCash</span></span>
+            <span><span class="badge-18" aria-hidden="true">18+</span><span data-i18n="trust3">Adults only</span></span>
+          </div>
+        </div>
+
+        <!-- Phone mock: a looping illustration of an Aviator round -->
+        <div class="stage" aria-hidden="true">
+          <div class="phone">
+            <div class="screen">
+              <div class="notch"></div>
+              <div class="app-head">
+                <div class="logo-mini"><img src="/public/brand/n5-emblem.webp" alt="">Aviator</div>
+                <div class="bal">PKR <b id="demoBal">5,000</b></div>
+              </div>
+              <div class="history" id="demoHist">
+                <span class="mid">2.41x</span><span class="lo">1.08x</span><span class="hi">12.6x</span><span class="lo">1.52x</span><span class="mid">3.07x</span><span class="lo">1.21x</span>
+              </div>
+              <div class="sky" id="sky">
+                <svg class="curve" viewBox="0 0 300 300" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0" stop-color="#ff5a5f" stop-opacity=".45"/>
+                      <stop offset="1" stop-color="#ff5a5f" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <path id="area" fill="url(#fill)" d=""/>
+                  <path id="line" fill="none" stroke="#ff5a5f" stroke-width="3" stroke-linecap="round" d=""/>
+                </svg>
+                <svg class="plane" id="plane" viewBox="0 0 64 64"><path fill="#ff5a5f" d="M60 26c0-2-1.6-3.6-3.6-3.6H40L26 6h-6l7 16.4H12L7 16H3l3 10-3 10h4l5-6.4h15L20 46h6l14-16.4h16.4c2 0 3.6-1.6 3.6-3.6z"/></svg>
+                <div class="mult"><small id="multLabel"></small><span id="multVal">1.00x</span></div>
+              </div>
+              <div class="bet-panel">
+                <div class="bet-amt">Bet<b>PKR 200</b></div>
+                <div class="bet-btn" id="betBtn">CASH OUT<small id="cashVal">PKR 200</small></div>
+              </div>
+            </div>
+          </div>
+          <div class="floaty f1"><span class="k" data-i18n="float1k">Daily Lucky Wheel</span><span data-i18n-html="float1">Win up to <span class="gold">PKR 1,000</span></span></div>
+          <div class="floaty f2"><span class="k" data-i18n="float2k">VIP Club</span><span data-i18n="float2">20 levels of rewards</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Ticker ===== -->
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span>Aviator</span><span>Slots</span><span>Daily Lucky Wheel</span><span>Easypaisa</span><span>JazzCash</span><span>VIP 1–20</span><span>Refer &amp; Earn</span><span>اردو · English · हिन्दी · Türkçe · العربية</span>
+        <span>Aviator</span><span>Slots</span><span>Daily Lucky Wheel</span><span>Easypaisa</span><span>JazzCash</span><span>VIP 1–20</span><span>Refer &amp; Earn</span><span>اردو · English · हिन्दी · Türkçe · العربية</span>
+      </div>
+    </div>
+
+    <!-- ===== Games ===== -->
+    <section id="games">
+      <div class="wrap">
+        <div class="sec-head">
+          <div class="kicker" data-i18n="games_k">Games</div>
+          <h2 data-i18n="games_h">Fast rounds. Real thrills.</h2>
+          <p data-i18n="games_p">Pick a game and play in seconds — every round is settled instantly to your wallet.</p>
+        </div>
+        <div class="games">
+          <article class="game aviator">
+            <div class="art">
+              <svg class="mini-plane" viewBox="0 0 64 64" aria-hidden="true"><path fill="#ff5a5f" d="M60 26c0-2-1.6-3.6-3.6-3.6H40L26 6h-6l7 16.4H12L7 16H3l3 10-3 10h4l5-6.4h15L20 46h6l14-16.4h16.4c2 0 3.6-1.6 3.6-3.6z"/></svg>
+            </div>
+            <span class="tag" data-i18n="tag_hot">🔥 Most played</span>
+            <h3>Aviator</h3>
+            <p data-i18n="aviator_p">The plane takes off and the multiplier climbs. Cash out before it flies away.</p>
+            <span class="stat" data-i18n="aviator_s">Up to 1000x</span>
+          </article>
+          <article class="game slots">
+            <div class="art">
+              <div class="reels" aria-hidden="true"><span>7️⃣</span><span>7️⃣</span><span>7️⃣</span></div>
+            </div>
+            <span class="tag" data-i18n="tag_classic">🎰 Classic</span>
+            <h3 data-i18n="slots_t">N5 Slots</h3>
+            <p data-i18n="slots_p">Spin the reels and match three symbols. Triple sevens hit the jackpot.</p>
+            <span class="stat" data-i18n="slots_s">Jackpot 50x</span>
+          </article>
+          <article class="game wheel">
+            <div class="art">
+              <svg class="mini-wheel" viewBox="0 0 100 100" aria-hidden="true">
+                <g stroke="#0b1510" stroke-width="1">
+                  <path d="M50 50 L50 2 A48 48 0 0 1 91.6 26 Z" fill="#f5c542"/>
+                  <path d="M50 50 L91.6 26 A48 48 0 0 1 91.6 74 Z" fill="#1f8a52"/>
+                  <path d="M50 50 L91.6 74 A48 48 0 0 1 50 98 Z" fill="#ff5a5f"/>
+                  <path d="M50 50 L50 98 A48 48 0 0 1 8.4 74 Z" fill="#f5c542"/>
+                  <path d="M50 50 L8.4 74 A48 48 0 0 1 8.4 26 Z" fill="#1f8a52"/>
+                  <path d="M50 50 L8.4 26 A48 48 0 0 1 50 2 Z" fill="#ff5a5f"/>
+                </g>
+                <circle cx="50" cy="50" r="10" fill="#0b1510" stroke="#f5c542" stroke-width="3"/>
+              </svg>
+            </div>
+            <span class="tag" data-i18n="tag_free">🎁 Free daily</span>
+            <h3 data-i18n="wheel_t">Daily Lucky Wheel</h3>
+            <p data-i18n="wheel_p">After your first deposit, get one free spin every 24 hours. Prizes go straight to your wallet.</p>
+            <span class="stat" data-i18n="wheel_s">Up to PKR 1,000</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Why N5 ===== -->
+    <section id="why" style="background:var(--bg-2)">
+      <div class="wrap">
+        <div class="sec-head">
+          <div class="kicker" data-i18n="why_k">Why N5</div>
+          <h2 data-i18n="why_h">Built for players in Pakistan</h2>
+        </div>
+        <div class="features">
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg></div>
+            <h3 data-i18n="f1_t">Easypaisa &amp; JazzCash</h3>
+            <p data-i18n="f1_p">Deposit and withdraw with the wallets you already use. No bank card needed.</p>
+            <div class="pay-chips"><span class="ep">easypaisa</span><span class="jc">JazzCash</span></div>
+          </div>
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 18l3-10 6 5 6-5 3 10z"/><path d="M3 21h18"/></svg></div>
+            <h3 data-i18n="f2_t">VIP Club — 20 levels</h3>
+            <p data-i18n="f2_p">Play more, climb levels and unlock bigger VIP rewards along the way.</p>
+          </div>
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 11h6M19 8v6"/></svg></div>
+            <h3 data-i18n="f3_t">Refer friends</h3>
+            <p data-i18n="f3_p">Share your referral code and earn when your friends join and play.</p>
+          </div>
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+            <h3 data-i18n="f4_t">Provably fair Aviator</h3>
+            <p data-i18n="f4_p">Every Aviator round is locked by a cryptographic seed before take-off, so results can be verified.</p>
+          </div>
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg></div>
+            <h3 data-i18n="f5_t">Your account, protected</h3>
+            <p data-i18n="f5_p">Encrypted connection, hashed passwords and automatic lock after repeated wrong passwords.</p>
+          </div>
+          <div class="feature">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg></div>
+            <h3 data-i18n="f6_t">Play in your language</h3>
+            <p data-i18n="f6_p">Urdu, English, Hindi, Turkish and Arabic — switch any time in the app.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== How to start ===== -->
+    <section id="start">
+      <div class="wrap">
+        <div class="sec-head">
+          <div class="kicker" data-i18n="start_k">Get started</div>
+          <h2 data-i18n="start_h">Playing in 3 simple steps</h2>
+        </div>
+        <div class="steps">
+          <div class="step"><h3 data-i18n="s1_t">Download the app</h3><p data-i18n="s1_p">Tap the download button and install N5 Game on your phone.</p></div>
+          <div class="step"><h3 data-i18n="s2_t">Create your account</h3><p data-i18n="s2_p">Enter your phone number and a password. That's it — no waiting for codes.</p></div>
+          <div class="step"><h3 data-i18n="s3_t">Deposit &amp; play</h3><p data-i18n="s3_p">Add funds with Easypaisa or JazzCash and start playing your favourite games.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== Final CTA ===== -->
+    <section style="padding-top:0">
+      <div class="wrap">
+        <div class="final">
+          <img src="/public/brand/n5-emblem.webp" alt="" width="92" height="92">
+          <h2 data-i18n="final_h">Ready to take off?</h2>
+          <p data-i18n="final_p">Download N5 Game now — after your first deposit, spin the Daily Lucky Wheel free every day.</p>
+          <div class="cta-row">
+            <a class="btn btn-gold" href="/download/android" data-platform="android" download>
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.6 9.48l1.84-3.18a.38.38 0 00-.66-.38l-1.86 3.23a11.4 11.4 0 00-9.84 0L5.22 5.92a.38.38 0 00-.66.38L6.4 9.48A10.78 10.78 0 001 18h22a10.78 10.78 0 00-5.4-8.52zM7 15.25a1.25 1.25 0 111.25-1.25A1.25 1.25 0 017 15.25zm10 0A1.25 1.25 0 1118.25 14 1.25 1.25 0 0117 15.25z"/></svg>
+              <span><small data-i18n="android_small">Download for</small><strong>Android</strong></span>
+            </a>
+            <a class="btn btn-dark" href="#" data-platform="ios">
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.73c-.02-2.28 1.860-3.38 1.95-3.43-1.06-1.55-2.71-1.77-3.3-1.79-1.4-.14-2.74.83-3.45.83-.71 0-1.8-.81-2.96-.79-1.52.02-2.93.89-3.710 2.25-1.59 2.75-.41 6.81 1.13 9.04.76 1.090 1.66 2.31 2.83 2.27 1.14-.05 1.57-.73 2.94-.73 1.37 0 1.76.73 2.96.71 1.23-.02 2-1.11 2.74-2.21.87-1.26 1.22-2.49 1.24-2.55-.03-.01-2.37-.91-2.37-3.6zM14.12 6.04c.62-.76 1.05-1.8.93-2.85-.9.04-2 .6-2.64 1.35-.57.66-1.08 1.73-.94 2.75 1 .08 2.03-.51 2.65-1.25z"/></svg>
+              <span><small data-i18n="ios_small">Get it for</small><strong>iPhone</strong></span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== FAQ ===== -->
+    <section id="faq" style="padding-top:0">
+      <div class="wrap">
+        <div class="sec-head">
+          <div class="kicker">FAQ</div>
+          <h2 data-i18n="faq_h">Questions? Answers.</h2>
+        </div>
+        <div class="faq">
+          <details><summary data-i18n="q1">How do I install the Android app?</summary><div data-i18n="a1">Tap "Download for Android". When the file finishes downloading, open it. If your phone asks, allow installing apps from your browser ("Install unknown apps"), then tap Install.</div></details>
+          <details><summary data-i18n="q2">Is there an iPhone app?</summary><div data-i18n="a2">The iPhone version is coming soon. Tap "Get it for iPhone" to see the latest status.</div></details>
+          <details><summary data-i18n="q3">How do I deposit and withdraw?</summary><div data-i18n="a3">Open the Wallet in the app and choose Easypaisa or JazzCash. Withdrawals are reviewed by our team and sent to your mobile wallet.</div></details>
+          <details><summary data-i18n="q4">What if I forget my password?</summary><div data-i18n="a4">Contact customer support from the app. After confirming your account, support will reset your password.</div></details>
+          <details><summary data-i18n="q5">Who can play?</summary><div data-i18n="a5">Only adults aged 18 or over. Please play responsibly and only with money you can afford to lose.</div></details>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer>
+    <div class="wrap">
+      <div class="rg">
+        <span class="badge-18" aria-hidden="true">18+</span>
+        <p data-i18n-html="rg"><b>Play responsibly.</b> Gaming involves real money and risk. Only adults 18+ may play. Set limits, take breaks and never chase losses. Responsible-gaming limits are available in the app.</p>
+      </div>
+      <div class="foot-row">
+        <span>© <span id="year">2026</span> N5 Game</span>
+        <nav>
+          <a href="#games" data-i18n="nav_games">Games</a>
+          <a href="#start" data-i18n="nav_start">How to start</a>
+          <a href="#faq">FAQ</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== Mobile download dock ===== -->
+  <div class="dock" id="dock">
+    <img src="/public/brand/n5-emblem.webp" alt="" width="40" height="40">
+    <div class="txt"><b data-i18n="dock_t">N5 Game</b><span data-i18n="dock_p">Aviator · Slots · Lucky Wheel</span></div>
+    <a class="btn btn-gold" id="dockBtn" href="/download/android" data-platform="android" download data-i18n="dock_btn">Download</a>
+  </div>
+
+  <!-- ===== Android install guide ===== -->
+  <div class="modal" id="androidModal" role="dialog" aria-modal="true" aria-labelledby="androidTitle">
+    <div class="sheet">
+      <h3 id="androidTitle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg><span data-i18n="am_t">Your download has started</span></h3>
+      <p data-i18n="am_p">Follow these steps to install N5 Game:</p>
+      <ol>
+        <li><div data-i18n-html="am_1">Open the downloaded file <span>(N5-Game.apk)</span> from your notifications or Downloads.</div></li>
+        <li><div data-i18n-html="am_2">If asked, tap <b>Settings</b> and turn on <b>Allow from this source</b>.</div></li>
+        <li><div data-i18n-html="am_3">Tap <b>Install</b>, then open N5 Game and create your account.</div></li>
+      </ol>
+      <a class="btn btn-gold" href="/download/android" download data-i18n="am_again">Download again</a>
+      <button class="close" type="button" data-close data-i18n="close">Close</button>
+    </div>
+  </div>
+
+  <!-- ===== iPhone status ===== -->
+  <div class="modal" id="iosModal" role="dialog" aria-modal="true" aria-labelledby="iosTitle">
+    <div class="sheet">
+      <h3 id="iosTitle"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.73c-.02-2.28 1.86-3.38 1.95-3.43-1.06-1.55-2.71-1.77-3.3-1.79-1.4-.14-2.74.83-3.45.83-.71 0-1.8-.81-2.96-.79-1.52.02-2.93.89-3.71 2.25-1.59 2.75-.41 6.81 1.13 9.04.76 1.09 1.66 2.31 2.83 2.27 1.14-.05 1.57-.73 2.94-.73 1.37 0 1.76.73 2.96.71 1.23-.02 2-1.11 2.74-2.21.87-1.26 1.22-2.49 1.24-2.55-.03-.01-2.37-.91-2.37-3.6zM14.12 6.04c.62-.76 1.05-1.8.93-2.85-.9.04-2 .6-2.64 1.35-.57.66-1.08 1.73-.94 2.75 1 .08 2.03-.51 2.65-1.25z"/></svg><span data-i18n="im_t">iPhone app coming soon</span></h3>
+      <p data-i18n="im_p">We're preparing N5 Game for iPhone. Until then, you can install the app on any Android phone.</p>
+      <a class="btn btn-gold" href="/download/android" data-platform="android" download data-i18n="im_android" style="margin-top:18px">Download for Android</a>
+      <button class="close" type="button" data-close data-i18n="close">Close</button>
+    </div>
+  </div>
+
+  <script>
+    // When the iPhone app is published, put its App Store / TestFlight link here
+    // and the iPhone buttons will open it instead of the "coming soon" sheet.
+    var IOS_APP_URL = '';
+
+    /* ---------------- Translations ---------------- */
+    var UR = {
+      nav_cta: 'ایپ ڈاؤن لوڈ کریں',
+      eyebrow: 'اب اینڈرائیڈ پر · ایزی پیسہ اور جاز کیش',
+      h1a: 'کھیلیں، اُڑیں،',
+      h1b: 'جیتیں!',
+      lede: '<b>ایوی ایٹر</b>، <b>سلاٹس</b> اور مفت <b>ڈیلی لکی وہیل</b> — سب ایک ہی ایپ میں۔ صرف اپنے فون نمبر سے چند سیکنڈ میں اکاؤنٹ بنائیں۔',
+      android_small: 'ڈاؤن لوڈ کریں',
+      ios_small: 'حاصل کریں',
+      trust1: 'محفوظ اور انکرپٹڈ',
+      trust2: 'ایزی پیسہ اور جاز کیش',
+      trust3: 'صرف 18 سال سے زائد',
+      float1k: 'ڈیلی لکی وہیل',
+      float1: '<span class="gold">1,000 روپے</span> تک جیتیں',
+      float2k: 'VIP کلب',
+      float2: 'انعامات کے 20 لیول',
+      games_k: 'گیمز',
+      games_h: 'تیز راؤنڈز، اصل مزہ',
+      games_p: 'گیم چنیں اور سیکنڈوں میں کھیلیں — ہر راؤنڈ کا نتیجہ فوراً آپ کے والٹ میں۔',
+      tag_hot: '🔥 سب سے مقبول',
+      aviator_p: 'جہاز اُڑتا ہے اور ملٹی پلائر بڑھتا جاتا ہے۔ جہاز اُڑ جانے سے پہلے کیش آؤٹ کریں۔',
+      aviator_s: '1000x تک',
+      tag_classic: '🎰 کلاسک',
+      slots_t: 'N5 سلاٹس',
+      slots_p: 'ریلز گھمائیں اور تین ایک جیسے نشان ملائیں۔ تین سات پر جیک پاٹ۔',
+      slots_s: 'جیک پاٹ 50x',
+      tag_free: '🎁 روزانہ مفت',
+      wheel_t: 'ڈیلی لکی وہیل',
+      wheel_p: 'پہلی رقم جمع کرانے کے بعد ہر 24 گھنٹے میں ایک مفت اسپن۔ انعام سیدھا آپ کے والٹ میں۔',
+      wheel_s: '1,000 روپے تک',
+      why_k: 'N5 کیوں',
+      why_h: 'پاکستان کے کھلاڑیوں کے لیے بنایا گیا',
+      f1_t: 'ایزی پیسہ اور جاز کیش',
+      f1_p: 'اپنے موبائل والٹ سے رقم جمع کریں اور نکالیں۔ بینک کارڈ کی ضرورت نہیں۔',
+      f2_t: 'VIP کلب — 20 لیول',
+      f2_p: 'زیادہ کھیلیں، لیول بڑھائیں اور بڑے VIP انعامات حاصل کریں۔',
+      f3_t: 'دوستوں کو بلائیں',
+      f3_p: 'اپنا ریفرل کوڈ شیئر کریں اور دوستوں کے کھیلنے پر کمائیں۔',
+      f4_t: 'ایوی ایٹر — قابلِ تصدیق',
+      f4_p: 'ہر راؤنڈ اُڑان سے پہلے ایک خفیہ کوڈ سے طے ہو جاتا ہے، اس لیے نتیجے کی تصدیق کی جا سکتی ہے۔',
+      f5_t: 'آپ کا اکاؤنٹ محفوظ',
+      f5_p: 'انکرپٹڈ کنکشن، محفوظ پاس ورڈ، اور بار بار غلط پاس ورڈ پر اکاؤنٹ خودکار لاک۔',
+      f6_t: 'اپنی زبان میں کھیلیں',
+      f6_p: 'اردو، انگریزی، ہندی، ترکی اور عربی — ایپ میں کسی بھی وقت زبان بدلیں۔',
+      start_k: 'شروع کریں',
+      start_h: 'صرف 3 آسان قدم',
+      s1_t: 'ایپ ڈاؤن لوڈ کریں',
+      s1_p: 'ڈاؤن لوڈ بٹن دبائیں اور N5 گیم اپنے فون پر انسٹال کریں۔',
+      s2_t: 'اکاؤنٹ بنائیں',
+      s2_p: 'اپنا فون نمبر اور پاس ورڈ لکھیں۔ بس — کسی کوڈ کا انتظار نہیں۔',
+      s3_t: 'رقم جمع کریں اور کھیلیں',
+      s3_p: 'ایزی پیسہ یا جاز کیش سے رقم جمع کریں اور اپنی پسندیدہ گیمز کھیلیں۔',
+      final_h: 'اُڑان کے لیے تیار؟',
+      final_p: 'ابھی N5 گیم ڈاؤن لوڈ کریں — پہلی رقم جمع کرانے کے بعد ڈیلی لکی وہیل روزانہ مفت گھمائیں۔',
+      faq_h: 'سوالات اور جوابات',
+      q1: 'اینڈرائیڈ ایپ کیسے انسٹال کریں؟',
+      a1: '"اینڈرائیڈ — ڈاؤن لوڈ کریں" دبائیں۔ فائل ڈاؤن لوڈ ہونے کے بعد اسے کھولیں۔ اگر فون پوچھے تو براؤزر کو ایپس انسٹال کرنے کی اجازت دیں، پھر انسٹال دبائیں۔',
+      q2: 'کیا آئی فون ایپ موجود ہے؟',
+      a2: 'آئی فون ورژن جلد آ رہا ہے۔ تازہ صورتحال کے لیے "آئی فون" بٹن دبائیں۔',
+      q3: 'رقم کیسے جمع کریں اور نکالیں؟',
+      a3: 'ایپ میں والٹ کھولیں اور ایزی پیسہ یا جاز کیش چنیں۔ رقم نکالنے کی درخواست ہماری ٹیم چیک کر کے آپ کے موبائل والٹ میں بھیجتی ہے۔',
+      q4: 'پاس ورڈ بھول جائیں تو کیا کریں؟',
+      a4: 'ایپ سے کسٹمر سپورٹ سے رابطہ کریں۔ اکاؤنٹ کی تصدیق کے بعد سپورٹ آپ کا پاس ورڈ ری سیٹ کر دے گا۔',
+      q5: 'کون کھیل سکتا ہے؟',
+      a5: 'صرف 18 سال یا اس سے زیادہ عمر کے افراد۔ ذمہ داری سے کھیلیں اور صرف اتنی رقم لگائیں جتنی کھونے کی گنجائش ہو۔',
+      rg: '<b>ذمہ داری سے کھیلیں۔</b> اس گیم میں اصل رقم اور خطرہ شامل ہے۔ صرف 18 سال سے زائد افراد کھیل سکتے ہیں۔ حد مقرر کریں، وقفہ لیں اور ہاری ہوئی رقم کے پیچھے نہ بھاگیں۔ ایپ میں ذمہ دارانہ گیمنگ کی حدیں موجود ہیں۔',
+      nav_games: 'گیمز',
+      nav_start: 'شروع کیسے کریں',
+      dock_t: 'N5 گیم',
+      dock_p: 'ایوی ایٹر · سلاٹس · لکی وہیل',
+      dock_btn: 'ڈاؤن لوڈ',
+      am_t: 'ڈاؤن لوڈ شروع ہو گیا',
+      am_p: 'N5 گیم انسٹال کرنے کے لیے یہ قدم اٹھائیں:',
+      am_1: 'نوٹیفکیشن یا ڈاؤن لوڈز سے فائل <span>(N5-Game.apk)</span> کھولیں۔',
+      am_2: 'اگر پوچھا جائے تو <b>سیٹنگز</b> دبائیں اور <b>اس سورس سے اجازت دیں</b> آن کریں۔',
+      am_3: '<b>انسٹال</b> دبائیں، پھر N5 گیم کھولیں اور اکاؤنٹ بنائیں۔',
+      am_again: 'دوبارہ ڈاؤن لوڈ کریں',
+      close: 'بند کریں',
+      im_t: 'آئی فون ایپ جلد آ رہی ہے',
+      im_p: 'ہم N5 گیم کو آئی فون کے لیے تیار کر رہے ہیں۔ تب تک آپ کسی بھی اینڈرائیڈ فون پر ایپ انسٹال کر سکتے ہیں۔',
+      im_android: 'اینڈرائیڈ کے لیے ڈاؤن لوڈ کریں'
+    };
+
+    var EN = {};
+    document.querySelectorAll('[data-i18n]').forEach(function (el) { EN[el.dataset.i18n] = el.textContent; });
+    document.querySelectorAll('[data-i18n-html]').forEach(function (el) { EN[el.dataset.i18nHtml] = el.innerHTML; });
+
+    function setLang(lang) {
+      var dict = lang === 'ur' ? UR : EN;
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === 'ur' ? 'rtl' : 'ltr';
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        var v = dict[el.dataset.i18n]; if (v != null) el.textContent = v;
+      });
+      document.querySelectorAll('[data-i18n-html]').forEach(function (el) {
+        var v = dict[el.dataset.i18nHtml]; if (v != null) el.innerHTML = v;
+      });
+      document.querySelectorAll('.lang-toggle button').forEach(function (b) {
+        b.setAttribute('aria-pressed', String(b.dataset.lang === lang));
+      });
+      try { localStorage.setItem('n5_lang', lang); } catch (e) {}
+    }
+    document.querySelectorAll('.lang-toggle button').forEach(function (b) {
+      b.addEventListener('click', function () { setLang(b.dataset.lang); });
+    });
+    (function () {
+      var q = new URLSearchParams(location.search).get('lang');
+      var saved = null;
+      try { saved = localStorage.getItem('n5_lang'); } catch (e) {}
+      var lang = q || saved;
+      if (lang === 'ur') setLang('ur');
+    })();
+
+    /* ---------------- Device detection & download buttons ---------------- */
+    var ua = navigator.userAgent || '';
+    var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var isAndroid = /Android/i.test(ua);
+
+    // Put the visitor's own platform first.
+    document.querySelectorAll('.cta-row').forEach(function (row) {
+      var mine = row.querySelector('[data-platform="' + (isIOS ? 'ios' : 'android') + '"]');
+      if (mine) { mine.classList.add('is-device'); }
+      if (isIOS) {
+        row.querySelectorAll('[data-platform]').forEach(function (b) {
+          b.classList.toggle('btn-gold', b.dataset.platform === 'ios');
+          b.classList.toggle('btn-dark', b.dataset.platform !== 'ios');
+        });
+      }
+    });
+
+    function track(name) {
+      // Hook for ad pixels (Meta / Google / TikTok) once they are added to the page.
+      try { (window.dataLayer = window.dataLayer || []).push({ event: name }); } catch (e) {}
+      try { if (window.fbq) window.fbq('trackCustom', name); } catch (e) {}
+    }
+
+    var androidModal = document.getElementById('androidModal');
+    var iosModal = document.getElementById('iosModal');
+    function open(m) { m.classList.add('open'); var c = m.querySelector('[data-close]'); if (c) c.focus(); }
+    function closeAll() { document.querySelectorAll('.modal.open').forEach(function (m) { m.classList.remove('open'); }); }
+    document.querySelectorAll('[data-close]').forEach(function (b) { b.addEventListener('click', closeAll); });
+    document.querySelectorAll('.modal').forEach(function (m) {
+      m.addEventListener('click', function (e) { if (e.target === m) closeAll(); });
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); });
+
+    document.querySelectorAll('[data-platform="android"]').forEach(function (a) {
+      a.addEventListener('click', function () {
+        track('download_android');
+        if (a.closest('#iosModal')) closeAll();
+        // Let the download start, then explain how to install it.
+        setTimeout(function () { open(androidModal); }, 350);
+      });
+    });
+    document.querySelectorAll('[data-platform="ios"]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        track('download_ios');
+        if (IOS_APP_URL) { location.href = IOS_APP_URL; return; }
+        open(iosModal);
+      });
+    });
+
+    if (isIOS) {
+      var dockBtn = document.getElementById('dockBtn');
+      dockBtn.dataset.platform = 'ios';
+      dockBtn.removeAttribute('download');
+      dockBtn.href = '#';
+      dockBtn.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopImmediatePropagation(); track('download_ios');
+        if (IOS_APP_URL) { location.href = IOS_APP_URL; return; }
+        open(iosModal);
+      }, true);
+    }
+
+    /* Show the mobile dock once the hero buttons scroll away. */
+    var dock = document.getElementById('dock');
+    var heroCta = document.querySelector('.hero .cta-row');
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (entries) {
+        dock.classList.toggle('show', !entries[0].isIntersecting);
+      }).observe(heroCta);
+    } else {
+      dock.classList.add('show');
+    }
+
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    /* ---------------- Aviator illustration loop ---------------- */
+    (function () {
+      var sky = document.getElementById('sky');
+      var line = document.getElementById('line');
+      var area = document.getElementById('area');
+      var plane = document.getElementById('plane');
+      var multVal = document.getElementById('multVal');
+      var multLabel = document.getElementById('multLabel');
+      var cashVal = document.getElementById('cashVal');
+      var betBtn = document.getElementById('betBtn');
+      var hist = document.getElementById('demoHist');
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      // A fixed, looping sequence: this is an illustration, not real round data.
+      var targets = [2.86, 1.47, 6.12, 1.93, 3.38];
+      var idx = 0;
+
+      function curveAt(p) { return Math.pow(p, 1.6); }
+      function draw(p) {
+        var pts = [];
+        for (var i = 0; i <= 40; i++) {
+          var t = (i / 40) * p;
+          pts.push([10 + t * 260, 290 - curveAt(t) * 220]);
+        }
+        var d = 'M' + pts.map(function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' L');
+        line.setAttribute('d', d);
+        var last = pts[pts.length - 1];
+        area.setAttribute('d', d + ' L' + last[0].toFixed(1) + ' 300 L10 300 Z');
+        plane.style.left = (last[0] / 300 * 100) + '%';
+        plane.style.top = (last[1] / 300 * 100) + '%';
+      }
+      function chip(v) {
+        var s = document.createElement('span');
+        s.className = v >= 10 ? 'hi' : v >= 2 ? 'mid' : 'lo';
+        s.textContent = v.toFixed(2) + 'x';
+        hist.insertBefore(s, hist.firstChild);
+        if (hist.children.length > 8) hist.removeChild(hist.lastChild);
+      }
+      function round() {
+        var target = targets[idx++ % targets.length];
+        var duration = 1400 + Math.log(target) * 2600;
+        var start = null;
+        sky.classList.remove('crashed');
+        multLabel.textContent = '';
+        betBtn.firstChild.nodeValue = 'CASH OUT';
+        function frame(ts) {
+          if (start === null) start = ts;
+          var p = Math.min(1, (ts - start) / duration);
+          var m = 1 + (target - 1) * Math.pow(p, 1.35);
+          draw(Math.min(1, p * 0.92 + 0.08));
+          multVal.textContent = m.toFixed(2) + 'x';
+          cashVal.textContent = 'PKR ' + Math.round(200 * m).toLocaleString('en-US');
+          if (p < 1) { requestAnimationFrame(frame); return; }
+          sky.classList.add('crashed');
+          multLabel.textContent = 'Flew away!';
+          betBtn.firstChild.nodeValue = 'BET';
+          cashVal.textContent = 'PKR 200';
+          chip(target);
+          setTimeout(round, 2200);
+        }
+        requestAnimationFrame(frame);
+      }
+      if (reduce) { draw(0.8); multVal.textContent = '2.86x'; return; }
+      round();
+    })();
+  </script>
+</body>
+</html>

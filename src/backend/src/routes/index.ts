@@ -36,6 +36,7 @@ import { adminProviders, adminGames, adminProviderUpdate, adminGameUpdate } from
 import { adminPromotions, adminPromotionUpsert, adminRewardConfigs, adminRewardConfigUpsert } from '../modules/admin/admin-promotions.controller.js';
 import { adminVipLevels, adminVipLevelUpdate } from '../modules/admin/admin-vip.controller.js';
 import { createCashierRouter } from '../modules/payments/cashier.routes.js';
+import { getWheelStatus, spinLuckyWheel } from '../modules/rewards/lucky-wheel.controller.js';
 import { createAdminFinancialRouter } from '../modules/admin/admin-financial.routes.js';
 
 /**
@@ -59,6 +60,8 @@ export function createApiRouter() {
   router.post('/promotions/:promotionId/open', requireAuth, openPromotion);
   router.get('/rewards/cycles', requireAuth, getCycles);
   router.post('/rewards/cycles/:cycleId/open', requireAuth, openCycle);
+  router.get('/rewards/wheel', requireAuth, getWheelStatus);
+  router.post('/rewards/wheel/spin', requireAuth, spinLuckyWheel);
   router.get('/vip', requireAuth, getVip);
   router.get('/vip/levels/:level', requireAuth, getVipLevel);
   router.get('/vip/rewards', requireAuth, getVipHistory);

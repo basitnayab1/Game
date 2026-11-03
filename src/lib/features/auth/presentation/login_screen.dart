@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'auth_ui.dart';
@@ -22,8 +23,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _password = TextEditingController();
   bool _obscure = true;
   bool _loading = false;
-  bool _codeLogin = false;
-  final _auth = AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment()));
+  final _auth =
+      AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment()));
 
   @override
   void dispose() {
@@ -34,7 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     if (_phone.text.trim().isEmpty) return;
-    if (!_codeLogin && _password.text.length < 8) return;
+    if (_password.text.length < 8) return;
     setState(() => _loading = true);
 
     final country = CountryService.active;
@@ -49,24 +50,20 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      if (_codeLogin) {
-        final challenge = await _auth.requestOtp(fullPhone);
-        if (!mounted) return;
-        context.push('${AppRoutes.otp}?challenge=${Uri.encodeComponent(challenge.challengeId)}&link=${Uri.encodeComponent(challenge.antiBanLink ?? '')}&phone=${Uri.encodeComponent(fullPhone)}');
-        return;
-      }
       await _auth.login(fullPhone, _password.text);
       if (!mounted) return;
       context.go(AppRoutes.home);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Login failed: $e'),
-        action: SnackBarAction(
-          label: 'Server IP',
-          textColor: const Color(0xFFF5C542),
-          onPressed: () => showServerConfigDialog(context),
-        ),
+        content: Text(authErrorMessage(e)),
+        action: kDebugMode
+            ? SnackBarAction(
+                label: 'Server IP',
+                textColor: const Color(0xFFF5C542),
+                onPressed: () => showServerConfigDialog(context),
+              )
+            : null,
       ));
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -85,85 +82,91 @@ class _LoginScreenState extends State<LoginScreen> {
           title: Text(context.tr('login', defaultText: 'Login')),
           actions: [
             IconButton(
-              icon: const Icon(Icons.language_rounded, color: Color(0xFFF5C542)),
+              icon:
+                  const Icon(Icons.language_rounded, color: Color(0xFFF5C542)),
               tooltip: context.tr('select_language', defaultText: 'Language'),
               onPressed: () => showLanguagePickerSheet(context),
             ),
           ],
         ),
         body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              AuthHeader(
-                title: context.tr('welcome_title', defaultText: 'Welcome back'),
-                subtitle: context.tr('welcome_subtitle', defaultText: 'Sign in securely to your N5 Game account.'),
-              ),
-              const SizedBox(height: 22),
-              ValueListenableBuilder<CountryConfig>(
-                valueListenable: CountryService.countryNotifier,
-                builder: (context, country, _) {
-                  return Column(
-                    children: [
-                      CountrySelectorCard(
-                        country: country,
-                        onTap: () => showCountryPickerSheet(context),
-                      ),
-                      const SizedBox(height: 14),
-                      AuthField(
-                        controller: _phone,
-                        label: '${context.tr('phone_number', defaultText: 'Phone Number')} (${country.dialCode})',
-                        hint: country.phoneHint,
-                        icon: Icons.phone_outlined,
-                        keyboardType: TextInputType.phone,
-                      ),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 14),
-              if (!_codeLogin)
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AuthHeader(
+                  title:
+                      context.tr('welcome_title', defaultText: 'Welcome back'),
+                  subtitle: context.tr('welcome_subtitle',
+                      defaultText: 'Sign in securely to your N5 Game account.'),
+                ),
+                const SizedBox(height: 22),
+                ValueListenableBuilder<CountryConfig>(
+                  valueListenable: CountryService.countryNotifier,
+                  builder: (context, country, _) {
+                    return Column(
+                      children: [
+                        CountrySelectorCard(
+                          country: country,
+                          onTap: () => showCountryPickerSheet(context),
+                        ),
+                        const SizedBox(height: 14),
+                        AuthField(
+                          controller: _phone,
+                          label:
+                              '${context.tr('phone_number', defaultText: 'Phone Number')} (${country.dialCode})',
+                          hint: country.phoneHint,
+                          icon: Icons.phone_outlined,
+                          keyboardType: TextInputType.phone,
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 14),
                 AuthField(
                   controller: _password,
                   label: context.tr('password', defaultText: 'Password'),
-                  hint: context.tr('enter_password', defaultText: 'Enter your password'),
+                  hint: context.tr('enter_password',
+                      defaultText: 'Enter your password'),
                   icon: Icons.lock_outline_rounded,
                   obscureText: _obscure,
                   suffix: IconButton(
                     onPressed: () => setState(() => _obscure = !_obscure),
-                    icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                    icon: Icon(_obscure
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined),
                   ),
                 ),
-              const SizedBox(height: 18),
-              AuthButton(
-                text: _loading
-                    ? context.tr('loading', defaultText: 'Signing in...')
-                    : (_codeLogin ? 'Send Verification Code' : context.tr('login', defaultText: 'Login')),
-                loading: _loading,
-                onPressed: _loading ? null : _login,
-              ),
-              const SizedBox(height: 12),
-              TextButton(
-                onPressed: _loading ? null : () => setState(() => _codeLogin = !_codeLogin),
-                child: Text(_codeLogin ? 'Use password login' : 'Login with verification code'),
-              ),
-              if (!_codeLogin)
-                TextButton(
-                  onPressed: _loading ? null : () => context.push(AppRoutes.forgotPassword),
-                  child: Text(context.tr('forgot_password', defaultText: 'Forgot password?')),
+                const SizedBox(height: 18),
+                AuthButton(
+                  text: _loading
+                      ? context.tr('loading', defaultText: 'Signing in...')
+                      : context.tr('login', defaultText: 'Login'),
+                  loading: _loading,
+                  onPressed: _loading ? null : _login,
                 ),
-              const SizedBox(height: 12),
-              OutlinedButton(
-                onPressed: _loading ? null : () => context.push(AppRoutes.register),
-                child: Text(context.tr('sign_up', defaultText: 'Create new account')),
-              ),
-            ],
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: _loading
+                      ? null
+                      : () => context.push(AppRoutes.forgotPassword),
+                  child: Text(context.tr('forgot_password',
+                      defaultText: 'Forgot password?')),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed:
+                      _loading ? null : () => context.push(AppRoutes.register),
+                  child: Text(
+                      context.tr('sign_up', defaultText: 'Create new account')),
+                ),
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 }

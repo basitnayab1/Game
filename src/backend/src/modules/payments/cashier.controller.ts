@@ -1,3 +1,4 @@
+import { checkDepositAllowed } from '../responsibleGaming/enforcement.js';
 import type { Request, Response } from 'express';
 import type { DatabaseClient } from '../../core/database/database.types.js';
 import crypto from 'node:crypto';
@@ -39,6 +40,11 @@ export async function requestDeposit(req: Request, res: Response) {
   }
 
   const amountMinor = Math.round(amount * 100);
+
+  const rgBlock = await checkDepositAllowed(db, userId, amountMinor);
+  if (rgBlock) {
+    return res.status(rgBlock.statusCode).json({ ok: false, error: { code: rgBlock.code, message: rgBlock.message } });
+  }
 
   // 2. Resolve Idempotency Key (scoped to user & deposit operation)
   const rawIdempotencyKey = PaymentIdempotencyService.extractIdempotencyKey(req);

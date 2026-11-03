@@ -39,3 +39,5 @@ Migration filenames are unique and sequential (001 to 034) before first producti
 035 payment idempotency & reference uniqueness (durable cashier idempotency store, deposit provider reference uniqueness)
 036 crash game rounds (durable crash round state, provably fair seeds, server-authoritative payouts)
 037 auth OTP challenges (durable phone verification challenges, separate typed-code and WhatsApp inbound secrets)
+038 login lockout (failed password counter, one-minute lock after 3 wrong passwords)
+039 in-house games (N5 Originals provider with Aviator and N5 Slots in the catalog)

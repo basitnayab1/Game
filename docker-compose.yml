@@ -59,6 +59,9 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-https://n5game.com,https://admin.n5game.com}
       API_PREFIX: /api/v1
       APP_NAME: ${APP_NAME:-N5 Game}
+    volumes:
+      # Drop the Android build here as N5-Game.apk; the landing page serves it at /download/android.
+      - ./downloads:/app/downloads:ro
     healthcheck:
       test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:8080/api/v1/health/live', (res) => process.exit(res.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"]
       interval: 10s

@@ -5,7 +5,6 @@ import '../../features/account_closure/presentation/account_closure_screen.dart'
 import '../../features/agent/presentation/agent_dashboard_screen.dart';
 import '../../features/auth/presentation/forgot_password_screen.dart';
 import '../../features/auth/presentation/login_screen.dart';
-import '../../features/auth/presentation/otp_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/faq/presentation/faq_screen.dart';
 import '../../features/games/presentation/favorites_screen.dart';
@@ -49,7 +48,6 @@ final GoRouter appRouter = GoRouter(
     GoRoute(path: AppRoutes.onboarding, builder: (_, __) => const OnboardingScreen()),
     GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
     GoRoute(path: AppRoutes.register, builder: (_, __) => const RegisterScreen()),
-    GoRoute(path: AppRoutes.otp, builder: (_, __) => const OtpScreen()),
     GoRoute(path: AppRoutes.forgotPassword, builder: (_, __) => const ForgotPasswordScreen()),
     GoRoute(path: AppRoutes.home, builder: (_, __) => const HomeScreen()),
     GoRoute(path: AppRoutes.notifications, builder: (_, __) => const NotificationsScreen()),

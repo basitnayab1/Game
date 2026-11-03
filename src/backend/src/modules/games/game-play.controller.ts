@@ -2,6 +2,7 @@ import type { Request, Response } from 'express';
 import type { DatabaseClient } from '../../core/database/database.types';
 import { env } from '../../config/env.js';
 import crypto from 'node:crypto';
+import { checkPlayAllowed } from '../responsibleGaming/enforcement.js';
 
 const SYMBOLS_POOL = [
   { symbol: '🍒', weight: 35, payout: 2 },
@@ -115,6 +116,9 @@ export async function spinGameController(req: Request, res: Response) {
       );
 
       let wallet = walletRes.rows[0];
+      // Checked under the wallet lock, so parallel spins cannot slip past a limit together.
+      const rgBlock = await checkPlayAllowed(tx, userId, betMinor);
+      if (rgBlock) throw rgBlock;
       if (!wallet) {
         const created = await tx.query<{ id: string; available_minor: string | number; currency: string }>(
           `INSERT INTO wallet_accounts (user_id, currency, available_minor, bonus_minor, locked_minor)

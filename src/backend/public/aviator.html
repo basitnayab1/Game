@@ -343,10 +343,14 @@
     const urlParams = new URLSearchParams(window.location.search);
     const gameId = urlParams.get('game') || 'aviator-crash';
     const sessionId = urlParams.get('session') || null;
-    let token = urlParams.get('token') || localStorage.getItem('n5_player_token') || localStorage.getItem('n5_admin_token') || '';
-    if (urlParams.get('token')) {
-      localStorage.setItem('n5_player_token', token);
+    // The app hands over the player's session in the URL fragment (#token=...), which is
+    // never sent to the server or logged; it is moved to storage and removed from the address bar.
+    const handoffToken = new URLSearchParams(window.location.hash.slice(1)).get('token');
+    if (handoffToken) {
+      localStorage.setItem('n5_player_token', handoffToken);
+      history.replaceState(null, '', window.location.pathname + window.location.search);
     }
+    let token = handoffToken || localStorage.getItem('n5_player_token') || localStorage.getItem('n5_admin_token') || '';
     let currentBetPkr = 50;
 
     // Flight Game State

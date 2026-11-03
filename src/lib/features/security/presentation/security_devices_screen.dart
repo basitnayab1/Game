@@ -1,7 +1,10 @@
-
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import '../../../core/auth/auth_repository.dart';
 import '../../../core/config/app_routes.dart';
 import '../../../core/navigation/n5_navigation.dart';
+import '../../../core/networking/player_api_client.dart';
+import '../data/security_api.dart';
 
 class SecurityDevicesScreen extends StatelessWidget {
   const SecurityDevicesScreen({super.key});
@@ -15,105 +18,58 @@ class SecurityDevicesScreen extends StatelessWidget {
           leading: const N5BackButton(fallbackRoute: AppRoutes.profile),
           title: const Text('Security & Devices'),
         ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _securityStatus(),
-          const SizedBox(height: 16),
-          _section(
-            title: 'Account Security',
-            children: [
-              _item(
-                context,
-                Icons.lock_outline,
-                'Change Password',
-                'Update your account password',
-                const ChangePasswordScreen(),
-              ),
-              _item(
-                context,
-                Icons.password_outlined,
-                'OTP / Verification',
-                'Manage verification and security checks',
-                const OtpSecurityScreen(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          _section(
-            title: 'Devices & Sessions',
-            children: [
-              _item(
-                context,
-                Icons.devices_outlined,
-                'Active Devices',
-                'Review devices currently signed in',
-                const ActiveDevicesScreen(),
-              ),
-              _item(
-                context,
-                Icons.history,
-                'Login History',
-                'Review recent sign-in activity',
-                const LoginHistoryScreen(),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('Logout Other Devices'),
-              subtitle: const Text('End other active sessions'),
-              onTap: () => _confirmLogout(context),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.warning_amber_outlined),
-              title: const Text('Security Alerts'),
-              subtitle: const Text('Suspicious activity will be shown here'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const SecurityAlertsScreen(),
+        body: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            _securityStatus(),
+            const SizedBox(height: 16),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.lock_outline),
+                title: const Text('Change Password'),
+                subtitle: const Text('Update your account password'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Security decisions and session revocation must be enforced by '
-            'the backend. The client app must not be the authority for '
-            'authentication or account security.',
-            style: TextStyle(color: Colors.grey, fontSize: 12),
-          ),
-        ],
+            const SizedBox(height: 14),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Logout Other Devices'),
+                subtitle: const Text('Sign out everywhere except this phone'),
+                onTap: () => _confirmLogout(context),
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
   Widget _securityStatus() {
-    return Card(
+    return const Card(
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding: EdgeInsets.all(18),
         child: Row(
-          children: const [
+          children: [
             Icon(Icons.verified_user_outlined, size: 36),
             SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Security Status',
-                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text('Security Status', style: TextStyle(fontWeight: FontWeight.w600)),
                   SizedBox(height: 5),
-                  Text('Account protected',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                  Text('Account protected', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                  SizedBox(height: 5),
+                  Text(
+                    'Login locks for 1 minute after 3 wrong passwords.',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                 ],
               ),
             ),
@@ -123,63 +79,28 @@ class SecurityDevicesScreen extends StatelessWidget {
     );
   }
 
-  Widget _section({
-    required String title,
-    required List<Widget> children,
-  }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
-              child: Text(title,
-                  style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.w700)),
-            ),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _item(
-    BuildContext context,
-    IconData icon,
-    String title,
-    String subtitle,
-    Widget screen,
-  ) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => screen),
-      ),
-    );
-  }
-
   void _confirmLogout(BuildContext context) {
+    final messenger = ScaffoldMessenger.of(context);
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Logout Other Devices?'),
-        content: const Text(
-          'Other active sessions will be revoked after backend confirmation.',
-        ),
+        content: const Text('Every other phone signed in to this account will be signed out.'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                final count = await SecurityApi(PlayerApiClient(PlayerApiClientConfig.fromEnvironment())).revokeOtherSessions();
+                messenger.showSnackBar(SnackBar(content: Text('Signed out $count other session(s).')));
+              } catch (_) {
+                messenger.showSnackBar(const SnackBar(content: Text('Could not sign out other devices. Try again.')));
+              }
+            },
             child: const Text('Confirm'),
           ),
         ],
@@ -188,8 +109,47 @@ class SecurityDevicesScreen extends StatelessWidget {
   }
 }
 
-class ChangePasswordScreen extends StatelessWidget {
+class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
+
+  @override
+  State<ChangePasswordScreen> createState() => _ChangePasswordScreenState();
+}
+
+class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _current = TextEditingController();
+  final _next = TextEditingController();
+  final _confirm = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _current.dispose();
+    _next.dispose();
+    _confirm.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _saving = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment()))
+          .changePassword(_current.text, _next.text);
+      if (!mounted) return;
+      messenger.showSnackBar(const SnackBar(content: Text('Password updated. Other devices were signed out.')));
+      Navigator.pop(context);
+    } catch (e) {
+      final wrong = e is DioException && (e.response?.data is Map) && (e.response!.data as Map)['error'] == 'CURRENT_PASSWORD_WRONG';
+      messenger.showSnackBar(SnackBar(
+        content: Text(wrong ? 'Current password is wrong.' : authErrorMessage(e)),
+      ));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -200,158 +160,37 @@ class ChangePasswordScreen extends StatelessWidget {
           leading: const N5BackButton(fallbackRoute: AppRoutes.security),
           title: const Text('Change Password'),
         ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextField(
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Current Password',
-                border: OutlineInputBorder(),
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextFormField(
+                controller: _current,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Current Password', border: OutlineInputBorder()),
+                validator: (v) => (v == null || v.isEmpty) ? 'Enter your current password' : null,
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'New Password',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _next,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'New Password', border: OutlineInputBorder()),
+                validator: (v) => (v == null || v.length < 8) ? 'Password must be at least 8 characters' : null,
               ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirm New Password',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: _confirm,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Confirm New Password', border: OutlineInputBorder()),
+                validator: (v) => v != _next.text ? 'Passwords do not match' : null,
               ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {},
-              child: const Text('Update Password'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class OtpSecurityScreen extends StatelessWidget {
-  const OtpSecurityScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return N5BackScope(
-      fallbackRoute: AppRoutes.security,
-      child: Scaffold(
-        appBar: AppBar(
-          leading: const N5BackButton(fallbackRoute: AppRoutes.security),
-          title: const Text('OTP & Verification'),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: const [
-            ListTile(
-              leading: Icon(Icons.phone_android),
-              title: Text('Phone Verification'),
-              subtitle: Text('Backend status required'),
-            ),
-            ListTile(
-              leading: Icon(Icons.security),
-              title: Text('Login Verification'),
-              subtitle: Text('Additional verification when required'),
-            ),
-            ListTile(
-              leading: Icon(Icons.timer_outlined),
-              title: Text('Rate Limits'),
-              subtitle: Text('Repeated attempts are restricted server-side'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class ActiveDevicesScreen extends StatelessWidget {
-  const ActiveDevicesScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return N5BackScope(
-      fallbackRoute: AppRoutes.security,
-      child: Scaffold(
-        appBar: AppBar(
-          leading: const N5BackButton(fallbackRoute: AppRoutes.security),
-          title: const Text('Active Devices'),
-        ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: const [
-            Card(
-              child: ListTile(
-                leading: Icon(Icons.phone_android),
-                title: Text('Current Android Device'),
-                subtitle: Text('Current session • Backend data required'),
-                trailing: Icon(Icons.verified_user_outlined),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _saving ? null : _save,
+                child: Text(_saving ? 'Updating...' : 'Update Password'),
               ),
-            ),
-            SizedBox(height: 8),
-            Center(child: Text('Other active devices will appear here.')),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LoginHistoryScreen extends StatelessWidget {
-  const LoginHistoryScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return N5BackScope(
-      fallbackRoute: AppRoutes.security,
-      child: Scaffold(
-        appBar: AppBar(
-          leading: const N5BackButton(fallbackRoute: AppRoutes.security),
-          title: const Text('Login History'),
-        ),
-        body: const Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text(
-              'No login history loaded.\nProduction data comes from the backend.',
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class SecurityAlertsScreen extends StatelessWidget {
-  const SecurityAlertsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return N5BackScope(
-      fallbackRoute: AppRoutes.security,
-      child: Scaffold(
-        appBar: AppBar(
-          leading: const N5BackButton(fallbackRoute: AppRoutes.security),
-          title: const Text('Security Alerts'),
-        ),
-        body: const Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Text(
-              'No security alerts.\nSuspicious events will appear here.',
-              textAlign: TextAlign.center,
-            ),
+            ],
           ),
         ),
       ),

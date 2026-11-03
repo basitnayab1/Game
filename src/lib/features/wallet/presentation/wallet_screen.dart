@@ -1,12 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/config/app_routes.dart';
-import '../../../core/country/country_config.dart';
-import '../../../core/country/country_picker_sheet.dart';
 import '../../../core/navigation/n5_navigation.dart';
+import '../../../core/networking/player_api_client.dart';
+import '../data/account_statement_api.dart';
+import '../data/wallet_api.dart';
 
-class WalletScreen extends StatelessWidget {
+class WalletScreen extends StatefulWidget {
   const WalletScreen({super.key});
+
+  @override
+  State<WalletScreen> createState() => _WalletScreenState();
+}
+
+class _WalletScreenState extends State<WalletScreen> {
+  final _client = PlayerApiClient(PlayerApiClientConfig.fromEnvironment());
+  late Future<_WalletData> _future = _load();
+
+  Future<_WalletData> _load() async {
+    final balance = await WalletApi(_client).balance();
+    final now = DateTime.now();
+    AccountStatementResponse? statement;
+    try {
+      statement = await AccountStatementApi(_client).fetch(from: now.subtract(const Duration(days: 30)), to: now);
+    } catch (_) {
+      // Recent activity is optional; the balance is what matters.
+    }
+    return _WalletData(balance, statement);
+  }
+
+  Future<void> _refresh() async {
+    final next = _load();
+    setState(() => _future = next);
+    await next;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,60 +45,82 @@ class WalletScreen extends StatelessWidget {
           backgroundColor: const Color(0xFF131926),
           leading: const N5BackButton(fallbackRoute: AppRoutes.home),
           title: const Text('Wallet', style: TextStyle(fontWeight: FontWeight.w700)),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.language_rounded, color: Color(0xFFF5C542)),
-              tooltip: 'Change Country',
-              onPressed: () => showCountryPickerSheet(context),
-            ),
-          ],
         ),
-        body: ValueListenableBuilder<CountryConfig>(
-          valueListenable: CountryService.countryNotifier,
-          builder: (context, country, _) {
-            final symbol = country.currencySymbol;
-            final isUsd = country.id == 'US';
-            final balNum = isUsd ? '250.00' : '25,000';
-            final bonusNum = isUsd ? '25.00' : '2,500';
+        body: FutureBuilder<_WalletData>(
+          future: _future,
+          builder: (context, snap) {
+            if (snap.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snap.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('Wallet could not be loaded.', style: TextStyle(color: Colors.white)),
+                      const SizedBox(height: 12),
+                      ElevatedButton(onPressed: _refresh, child: const Text('Retry')),
+                    ],
+                  ),
+                ),
+              );
+            }
+            final data = snap.data!;
+            final w = data.balance;
+            final activity = <Widget>[
+              for (final d in data.statement?.deposits.take(3) ?? const <AccountStatementDeposit>[])
+                _transaction('Deposit', '+ Rs ${formatMinor(d.amountMinor)}', '${d.method} • ${d.status}', Icons.arrow_downward, true),
+              for (final x in data.statement?.withdrawals.take(3) ?? const <AccountStatementWithdrawal>[])
+                _transaction('Withdrawal', '- Rs ${formatMinor(x.amountMinor)}', '${x.method} • ${x.status}', Icons.arrow_upward, false),
+            ];
 
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _balanceCard(country, balNum),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(child: _actionButton(context, 'Deposit', Icons.add_circle_outline, true)),
-                    const SizedBox(width: 12),
-                    Expanded(child: _actionButton(context, 'Withdraw', Icons.account_balance_wallet_outlined, false)),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                const Text(
-                  'Balance Breakdown',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 10),
-                _breakdownTile('Bonus / Promotional', '$symbol $bonusNum', Icons.card_giftcard),
-                _breakdownTile('Pending / Locked', '$symbol 0', Icons.lock_outline),
-                const SizedBox(height: 22),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Recent Activity',
-                      style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
-                    ),
-                    TextButton(
-                      onPressed: () => context.push(AppRoutes.statement),
-                      child: const Text('View Statement'),
-                    ),
-                  ],
-                ),
-                _transaction('Deposit', '+ $symbol ${isUsd ? '100.00' : '5,000'}', 'Confirmed', Icons.arrow_downward, true),
-                _transaction('Withdrawal', '- $symbol ${isUsd ? '50.00' : '2,000'}', 'Completed', Icons.arrow_upward, false),
-                _transaction('Bonus', '+ $symbol ${isUsd ? '10.00' : '500'}', 'Confirmed', Icons.card_giftcard, true),
-              ],
+            return RefreshIndicator(
+              onRefresh: _refresh,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _balanceCard(w),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(child: _actionButton(context, 'Deposit', Icons.add_circle_outline, true)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _actionButton(context, 'Withdraw', Icons.account_balance_wallet_outlined, false)),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  const Text(
+                    'Balance Breakdown',
+                    style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 10),
+                  _breakdownTile('Bonus / Promotional', 'Rs ${formatMinor(w.bonusMinor)}', Icons.card_giftcard),
+                  _breakdownTile('Pending / Locked', 'Rs ${formatMinor(w.lockedMinor)}', Icons.lock_outline),
+                  const SizedBox(height: 22),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Recent Activity',
+                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                      ),
+                      TextButton(
+                        onPressed: () => context.push(AppRoutes.statement),
+                        child: const Text('View Statement'),
+                      ),
+                    ],
+                  ),
+                  if (activity.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Text('No transactions in the last 30 days.', style: TextStyle(color: Color(0xFFA8B0C0))),
+                    )
+                  else
+                    ...activity,
+                ],
+              ),
             );
           },
         ),
@@ -79,7 +128,7 @@ class WalletScreen extends StatelessWidget {
     );
   }
 
-  Widget _balanceCard(CountryConfig country, String balance) {
+  Widget _balanceCard(WalletBalance w) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -103,23 +152,16 @@ class WalletScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: const Color(0xFF2A364F)),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(country.flag, style: const TextStyle(fontSize: 14)),
-                    const SizedBox(width: 4),
-                    Text(
-                      country.currencyCode,
-                      style: const TextStyle(color: Color(0xFFF5C542), fontSize: 11, fontWeight: FontWeight.w700),
-                    ),
-                  ],
+                child: Text(
+                  w.currency,
+                  style: const TextStyle(color: Color(0xFFF5C542), fontSize: 11, fontWeight: FontWeight.w700),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            '${country.currencySymbol} $balance',
+            'Rs ${formatMinor(w.availableMinor)}',
             style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900),
           ),
         ],
@@ -136,7 +178,10 @@ class WalletScreen extends StatelessWidget {
           foregroundColor: isPrimary ? const Color(0xFF0F172A) : Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        onPressed: () => context.push(title == 'Deposit' ? AppRoutes.deposit : AppRoutes.withdrawal),
+        // Refresh on return so a new deposit or withdrawal shows up.
+        onPressed: () => context.push(title == 'Deposit' ? AppRoutes.deposit : AppRoutes.withdrawal).then((_) {
+          if (mounted) _refresh();
+        }),
         icon: Icon(icon, size: 20),
         label: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
       ),
@@ -191,4 +236,10 @@ class WalletScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _WalletData {
+  final WalletBalance balance;
+  final AccountStatementResponse? statement;
+  const _WalletData(this.balance, this.statement);
 }

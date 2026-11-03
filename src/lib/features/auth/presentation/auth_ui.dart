@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../core/networking/player_api_client.dart';
 
@@ -28,7 +29,7 @@ void showServerConfigDialog(BuildContext context) {
             children: [
               ActionChip(
                 label: const Text('Cloudflare Live (Auto)', style: TextStyle(fontSize: 12)),
-                onPressed: () => controller.text = 'https://regulations-crimes-corrected-incomplete.trycloudflare.com/api/v1',
+                onPressed: () => controller.text = 'https://api.n5gamez.com/api/v1',
               ),
               ActionChip(
                 label: const Text('Wi-Fi PC (192.168.18.7)', style: TextStyle(fontSize: 12)),
@@ -145,11 +146,13 @@ class AuthHeader extends StatelessWidget {
                 ),
               ],
             ),
-            IconButton(
-              icon: const Icon(Icons.dns_outlined, size: 20, color: Colors.white54),
-              tooltip: 'Server Connection',
-              onPressed: () => showServerConfigDialog(context),
-            ),
+            // Switching backends is a developer tool; players never see it.
+            if (kDebugMode)
+              IconButton(
+                icon: const Icon(Icons.dns_outlined, size: 20, color: Colors.white54),
+                tooltip: 'Server Connection',
+                onPressed: () => showServerConfigDialog(context),
+              ),
           ],
         ),
         const SizedBox(height: 8),

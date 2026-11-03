@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:n5_game/core/config/app_routes.dart';
 import 'package:n5_game/core/routing/app_router.dart';
 import 'package:n5_game/main.dart';
 
 void main() {
+  // The home screen reads the session token on start; tests have no platform keystore.
+  setUp(() => FlutterSecureStorage.setMockInitialValues({}));
+
   group('N5 App Back Navigation Test Suite', () {
     testWidgets('Game -> In-App Back Button -> Returns to Lobby', (tester) async {
       await tester.pumpWidget(const N5GameApp());
@@ -37,13 +41,12 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('N5 GAME'), findsOneWidget);
 
-      // Enter Slots category
+      // Enter Slots category, then a game inside it
       await tester.tap(find.text('Slots'));
       await tester.pumpAndSettle();
-      expect(find.text('Slots Game 1'), findsWidgets);
+      expect(find.widgetWithText(AppBar, 'Slots'), findsOneWidget);
 
-      // Enter Slots Game 1
-      await tester.tap(find.text('Slots Game 1').first);
+      appRouter.push('${AppRoutes.gameDetail}?game=N5%20Slots');
       await tester.pumpAndSettle();
       expect(find.text('Play'), findsOneWidget);
 

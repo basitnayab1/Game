@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/auth/auth_repository.dart';
 import '../../../core/config/app_routes.dart';
 import '../../../core/localization/localization_service.dart';
 import '../../../core/navigation/n5_navigation.dart';
+import '../../../core/networking/player_api_client.dart';
+import '../../security/presentation/security_devices_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -75,7 +78,10 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           OutlinedButton.icon(
-            onPressed: () {},
+            onPressed: () async {
+              await AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment())).logout().catchError((_) {});
+              if (context.mounted) context.go(AppRoutes.login);
+            },
             icon: const Icon(Icons.logout_rounded),
             label: Text(context.tr('logout', defaultText: 'Logout')),
             style: OutlinedButton.styleFrom(
@@ -111,29 +117,27 @@ class _ProfileHeader extends StatelessWidget {
             child: Icon(Icons.person_rounded, size: 34, color: Color(0xFF8B7CFF)),
           ),
           const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'N5 Player',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  'Profile ID: N5-000000',
-                  style: TextStyle(color: Color(0xFFA8B0C0), fontSize: 12),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  'VIP 1 • Verification pending',
-                  style: TextStyle(color: Color(0xFFF5C542), fontSize: 12),
-                ),
-              ],
+          Expanded(
+            child: FutureBuilder<Map<String, dynamic>>(
+              future: AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment())).me(),
+              builder: (context, snap) {
+                final me = snap.data;
+                final id = (me?['id'] as String?) ?? '';
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      (me?['phone'] as String?) ?? 'N5 Player',
+                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      id.isEmpty ? 'Loading...' : 'Player ID: N5-${id.substring(0, 8).toUpperCase()}',
+                      style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 12),
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -208,7 +212,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool notifications = true;
   bool securityAlerts = true;
-  bool biometric = false;
 
   @override
   Widget build(BuildContext context) {
@@ -255,32 +258,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: securityAlerts,
                 onChanged: (v) => setState(() => securityAlerts = v),
               ),
-              _SwitchRow(
-                icon: Icons.fingerprint_rounded,
-                title: 'Biometric Unlock',
-                value: biometric,
-                onChanged: (v) => setState(() => biometric = v),
-              ),
               _ActionRow(
                 icon: Icons.password_rounded,
                 title: 'Change Password',
-                onTap: () {},
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePasswordScreen())),
               ),
               _ActionRow(
                 icon: Icons.devices_rounded,
                 title: 'Manage Devices',
-                onTap: () {},
+                onTap: () => context.push(AppRoutes.security),
               ),
             ],
           ),
           const SizedBox(height: 12),
           _SettingsCard(
-            title: 'Privacy & Legal',
+            title: 'Account & Safety',
             children: [
-              _ActionRow(icon: Icons.privacy_tip_outlined, title: 'Privacy Policy', onTap: () {}),
-              _ActionRow(icon: Icons.description_outlined, title: 'Terms & Conditions', onTap: () {}),
-              _ActionRow(icon: Icons.health_and_safety_outlined, title: 'Responsible Gaming', onTap: () {}),
-              _ActionRow(icon: Icons.person_off_outlined, title: 'Account Closure', onTap: () {}),
+              _ActionRow(icon: Icons.health_and_safety_outlined, title: 'Responsible Gaming', onTap: () => context.push(AppRoutes.responsibleGaming)),
+              _ActionRow(icon: Icons.person_off_outlined, title: 'Account Closure', onTap: () => context.push(AppRoutes.accountClosure)),
             ],
           ),
           const SizedBox(height: 22),

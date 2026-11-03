@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/config/app_routes.dart';
@@ -27,7 +29,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _accepted = false;
   bool _obscure = true;
   bool _loading = false;
-  final _auth = AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment()));
+  final _auth =
+      AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment()));
 
   @override
   void dispose() {
@@ -43,7 +46,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (!_accepted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please accept the Terms and Conditions.')),
+        const SnackBar(
+            content: Text('Please accept the Terms and Conditions.')),
       );
       return;
     }
@@ -59,19 +63,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     }
     try {
-      await _auth.register(phone: fullPhone, dob: _dob.text.trim(), password: _password.text);
-    } on RegistrationNeedsOtp catch (e) {
+      await _auth.register(
+          phone: fullPhone,
+          dob: _dob.text.trim(),
+          password: _password.text,
+          referralCode: _referral.text);
       if (!mounted) return;
-      context.push('${AppRoutes.otp}?challenge=${Uri.encodeComponent(e.challengeId)}&link=${Uri.encodeComponent(e.antiBanLink ?? '')}&phone=${Uri.encodeComponent(fullPhone)}');
+      context.go(AppRoutes.home);
     } catch (e) {
       if (!mounted) return;
-      final rawStr = e.toString();
-      final isAlreadyRegistered = rawStr.contains('PHONE_ALREADY_REGISTERED') || rawStr.contains('already registered');
-      final displayMsg = isAlreadyRegistered
-          ? 'Yeh number pehle se registered hai! 1 number par sirf 1 account ban sakta hai.'
-          : 'Registration failed: $e';
+      final isAlreadyRegistered = e is DioException &&
+          (e.response?.data is Map) &&
+          (e.response!.data as Map)['error'] == 'PHONE_ALREADY_REGISTERED';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(displayMsg),
+        content: Text(authErrorMessage(e)),
         backgroundColor: isAlreadyRegistered ? const Color(0xFFEF4444) : null,
         action: isAlreadyRegistered
             ? SnackBarAction(
@@ -79,11 +84,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 textColor: Colors.white,
                 onPressed: () => context.push(AppRoutes.login),
               )
-            : SnackBarAction(
-                label: 'Server IP',
-                textColor: const Color(0xFFF5C542),
-                onPressed: () => showServerConfigDialog(context),
-              ),
+            : kDebugMode
+                ? SnackBarAction(
+                    label: 'Server IP',
+                    textColor: const Color(0xFFF5C542),
+                    onPressed: () => showServerConfigDialog(context),
+                  )
+                : null,
       ));
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -101,106 +108,119 @@ class _RegisterScreenState extends State<RegisterScreen> {
           title: Text(context.tr('register', defaultText: 'Create Account')),
           actions: [
             IconButton(
-              icon: const Icon(Icons.language_rounded, color: Color(0xFFF5C542)),
+              icon:
+                  const Icon(Icons.language_rounded, color: Color(0xFFF5C542)),
               tooltip: context.tr('select_language', defaultText: 'Language'),
               onPressed: () => showLanguagePickerSheet(context),
             ),
           ],
         ),
         body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                const AuthHeader(
-                  title: 'Join N5 Game',
-                  subtitle: 'Create your account. Eligibility and age requirements are verified by the backend.',
-                ),
-                const SizedBox(height: 24),
-                ValueListenableBuilder<CountryConfig>(
-                  valueListenable: CountryService.countryNotifier,
-                  builder: (context, country, _) {
-                    return Column(
-                      children: [
-                        CountrySelectorCard(
-                          country: country,
-                          onTap: () => showCountryPickerSheet(context),
-                        ),
-                        const SizedBox(height: 16),
-                        AuthField(
-                          controller: _phone,
-                          label: 'Phone Number (${country.dialCode})',
-                          hint: country.phoneHint,
-                          icon: Icons.phone_outlined,
-                          keyboardType: TextInputType.phone,
-                          validator: (v) => requiredValue(v, 'Enter your phone number'),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 16),
-                AuthField(
-                  controller: _dob,
-                  label: 'Date of Birth',
-                  hint: 'YYYY-MM-DD',
-                  icon: Icons.cake_outlined,
-                  keyboardType: TextInputType.datetime,
-                  validator: (v) => requiredValue(v, 'Enter your date of birth'),
-                ),
-                const SizedBox(height: 16),
-                AuthField(
-                  controller: _password,
-                  label: 'Password',
-                  hint: 'Create a password',
-                  icon: Icons.lock_outline_rounded,
-                  obscureText: _obscure,
-                  suffix: IconButton(
-                    onPressed: () => setState(() => _obscure = !_obscure),
-                    icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                children: [
+                  const AuthHeader(
+                    title: 'Join N5 Game',
+                    subtitle:
+                        'Create your account. Eligibility and age requirements are verified by the backend.',
                   ),
-                  validator: (v) {
-                    if (v == null || v.length < 8) return 'Password must be at least 8 characters';
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                AuthField(
-                  controller: _confirm,
-                  label: 'Confirm Password',
-                  hint: 'Repeat your password',
-                  icon: Icons.lock_reset_outlined,
-                  obscureText: true,
-                  validator: (v) => v != _password.text ? 'Passwords do not match' : null,
-                ),
-                const SizedBox(height: 16),
-                AuthField(
-                  controller: _referral,
-                  label: 'Referral Code (Optional)',
-                  hint: 'Enter referral code',
-                  icon: Icons.card_giftcard_outlined,
-                ),
-                const SizedBox(height: 8),
-                CheckboxListTile(
-                  contentPadding: EdgeInsets.zero,
-                  value: _accepted,
-                  onChanged: (v) => setState(() => _accepted = v ?? false),
-                  controlAffinity: ListTileControlAffinity.leading,
-                  title: const Text(
-                    'I confirm that I meet the applicable age requirements and agree to the Terms, Privacy Policy and Responsible Gaming rules.',
-                    style: TextStyle(color: Color(0xFFA8B0C0), fontSize: 12, height: 1.4),
+                  const SizedBox(height: 24),
+                  ValueListenableBuilder<CountryConfig>(
+                    valueListenable: CountryService.countryNotifier,
+                    builder: (context, country, _) {
+                      return Column(
+                        children: [
+                          CountrySelectorCard(
+                            country: country,
+                            onTap: () => showCountryPickerSheet(context),
+                          ),
+                          const SizedBox(height: 16),
+                          AuthField(
+                            controller: _phone,
+                            label: 'Phone Number (${country.dialCode})',
+                            hint: country.phoneHint,
+                            icon: Icons.phone_outlined,
+                            keyboardType: TextInputType.phone,
+                            validator: (v) =>
+                                requiredValue(v, 'Enter your phone number'),
+                          ),
+                        ],
+                      );
+                    },
                   ),
-                ),
-                const SizedBox(height: 12),
-                AuthButton(text: _loading ? 'Creating...' : 'Create Account', loading: _loading, onPressed: _loading ? null : _register),
-              ],
+                  const SizedBox(height: 16),
+                  AuthField(
+                    controller: _dob,
+                    label: 'Date of Birth',
+                    hint: 'YYYY-MM-DD',
+                    icon: Icons.cake_outlined,
+                    keyboardType: TextInputType.datetime,
+                    validator: (v) =>
+                        requiredValue(v, 'Enter your date of birth'),
+                  ),
+                  const SizedBox(height: 16),
+                  AuthField(
+                    controller: _password,
+                    label: 'Password',
+                    hint: 'Create a password',
+                    icon: Icons.lock_outline_rounded,
+                    obscureText: _obscure,
+                    suffix: IconButton(
+                      onPressed: () => setState(() => _obscure = !_obscure),
+                      icon: Icon(_obscure
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined),
+                    ),
+                    validator: (v) {
+                      if (v == null || v.length < 8) {
+                        return 'Password must be at least 8 characters';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  AuthField(
+                    controller: _confirm,
+                    label: 'Confirm Password',
+                    hint: 'Repeat your password',
+                    icon: Icons.lock_reset_outlined,
+                    obscureText: true,
+                    validator: (v) =>
+                        v != _password.text ? 'Passwords do not match' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  AuthField(
+                    controller: _referral,
+                    label: 'Referral Code (Optional)',
+                    hint: 'Enter referral code',
+                    icon: Icons.card_giftcard_outlined,
+                  ),
+                  const SizedBox(height: 8),
+                  CheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _accepted,
+                    onChanged: (v) => setState(() => _accepted = v ?? false),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    title: const Text(
+                      'I confirm that I meet the applicable age requirements and agree to the Terms, Privacy Policy and Responsible Gaming rules.',
+                      style: TextStyle(
+                          color: Color(0xFFA8B0C0), fontSize: 12, height: 1.4),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  AuthButton(
+                      text: _loading ? 'Creating...' : 'Create Account',
+                      loading: _loading,
+                      onPressed: _loading ? null : _register),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    ),
     );
   }
 }

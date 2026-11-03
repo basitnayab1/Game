@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'country_config.dart';
-import '../localization/localization_service.dart';
 
 void showCountryPickerSheet(BuildContext context, {ValueChanged<CountryConfig>? onSelected}) {
   showModalBottomSheet(
@@ -77,7 +76,6 @@ void showCountryPickerSheet(BuildContext context, {ValueChanged<CountryConfig>? 
                         : const Icon(Icons.chevron_right_rounded, color: Colors.white30, size: 20),
                     onTap: () {
                       CountryService.setCountry(country);
-                      LocalizationService.setLanguageForCountry(country.id);
                       onSelected?.call(country);
                       Navigator.pop(ctx);
                     },

@@ -16,6 +16,9 @@ import { createDatabaseClient } from './core/database/postgres.client';
 export function createApp(db?: DatabaseClient) {
   const app = express();
   app.disable('x-powered-by');
+  // Behind exactly one reverse proxy (nginx): use the client address it forwards, so
+  // per-IP rate limits apply per player instead of to everyone at once.
+  app.set('trust proxy', 1);
   app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
   const corsOrigins = env.CORS_ORIGIN === '*'
     ? true
@@ -68,22 +71,30 @@ export function createApp(db?: DatabaseClient) {
     app.get('/admin/*', (_req, res) => res.sendFile(path.join(adminDist, 'index.html')));
   }
 
+  // The Android build is published by dropping it into downloads/ on the server
+  // (mounted into the container), so a new APK needs no image rebuild.
   const apkCandidates = [
-    path.resolve(process.cwd(), '../../N5-Mobile-App.apk'),
-    path.resolve(process.cwd(), '../N5-Mobile-App.apk'),
-    path.resolve(process.cwd(), 'N5-Mobile-App.apk'),
+    path.resolve(process.cwd(), 'downloads/N5-Game.apk'),
+    path.resolve(process.cwd(), '../../N5_Game_VPS_Test.apk'),
     path.resolve(process.cwd(), '../src/build/app/outputs/flutter-apk/app-release.apk'),
   ];
-  app.get('/download', (_req, res) => {
+  const sendApk = (_req: express.Request, res: express.Response) => {
     const found = apkCandidates.find((p) => fs.existsSync(p));
     if (found) {
-      res.download(found, 'N5-Game-Mobile.apk');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.download(found, 'N5-Game.apk');
     } else {
       res.status(404).send('APK file not found on server.');
     }
-  });
+  };
+  app.get('/download', sendApk);
+  app.get('/download/android', sendApk);
 
-  app.get('/', (_req, res) => res.json({ success: true, data: { name: env.APP_NAME, api: env.API_PREFIX }, requestId: res.locals.requestId }));
+  const landingPage = path.join(publicDir, 'landing.html');
+  app.get('/', (_req, res) => {
+    if (fs.existsSync(landingPage)) return res.sendFile(landingPage);
+    res.json({ success: true, data: { name: env.APP_NAME, api: env.API_PREFIX }, requestId: res.locals.requestId });
+  });
   app.use(env.API_PREFIX, createApiRouter());
   app.use('/payments', createCashierRouter());
   app.use(errorHandler);
