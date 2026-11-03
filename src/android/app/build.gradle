@@ -4,12 +4,24 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
-// Release signing key. key.properties and the keystore are not in git; every
-// release must be signed with the same key or installed apps cannot update.
-def keystoreProperties = new Properties()
-def keystorePropertiesFile = rootProject.file("key.properties")
-if (keystorePropertiesFile.exists()) {
-    keystorePropertiesFile.withReader("UTF-8") { keystoreProperties.load(it) }
+// Release signing key, from the N5_ANDROID_* entries in the project's .env
+// (or the same environment variables, e.g. on a build server). .env is not in
+// git; every release must be signed with this key or installed apps cannot update.
+def envFile = rootProject.file("../../.env")
+def dotenv = [:]
+if (envFile.exists()) {
+    envFile.eachLine("UTF-8") { line ->
+        def t = line.trim()
+        def i = t.indexOf("=")
+        if (t && !t.startsWith("#") && i > 0) dotenv[t.substring(0, i)] = t.substring(i + 1)
+    }
+}
+def signingValue = { String key -> System.getenv(key) ?: dotenv[key] }
+def keystoreBase64 = signingValue("N5_ANDROID_KEYSTORE_BASE64")
+def releaseKeystore = keystoreBase64 ? new File(buildDir, "signing/n5-release.jks") : null
+if (releaseKeystore) {
+    releaseKeystore.parentFile.mkdirs()
+    releaseKeystore.bytes = keystoreBase64.decodeBase64()
 }
 
 android {
@@ -33,11 +45,11 @@ android {
 
     signingConfigs {
         release {
-            if (keystorePropertiesFile.exists()) {
-                storeFile = file(keystoreProperties["storeFile"])
-                storePassword = keystoreProperties["storePassword"]
-                keyAlias = keystoreProperties["keyAlias"]
-                keyPassword = keystoreProperties["keyPassword"]
+            if (releaseKeystore) {
+                storeFile = releaseKeystore
+                storePassword = signingValue("N5_ANDROID_KEYSTORE_PASSWORD")
+                keyAlias = signingValue("N5_ANDROID_KEY_ALIAS")
+                keyPassword = signingValue("N5_ANDROID_KEY_PASSWORD")
             }
         }
     }
@@ -52,8 +64,8 @@ android {
 // Refuse a release build without the key rather than fall back to the debug key:
 // a debug-signed release would not install over the published app.
 gradle.taskGraph.whenReady { graph ->
-    if (!keystorePropertiesFile.exists() && graph.allTasks.any { it.name.contains("Release") }) {
-        throw new GradleException("Missing android/key.properties: release builds must use the N5 release key.")
+    if (!releaseKeystore && graph.allTasks.any { it.name.contains("Release") }) {
+        throw new GradleException("Missing N5_ANDROID_KEYSTORE_BASE64 in .env: release builds must use the N5 release key.")
     }
 }
 
