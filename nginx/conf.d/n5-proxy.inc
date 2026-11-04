@@ -24,3 +24,11 @@ proxy_http_version 1.1;
 proxy_set_header Upgrade $http_upgrade;
 proxy_set_header Connection $connection_upgrade;
 proxy_read_timeout 60s;
+
+# The Android APK is served straight from disk (fast, resumable with Range).
+location = /download/android {
+    alias /srv/downloads/N5-Game.apk;
+    default_type application/vnd.android.package-archive;
+    add_header Content-Disposition 'attachment; filename="N5-Game.apk"' always;
+    add_header Cache-Control "no-cache" always;
+}

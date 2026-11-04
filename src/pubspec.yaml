@@ -1,7 +1,7 @@
 name: n5_game
 publish_to: 'none'
 # versionCode (+N) must go up on every release: the in-app updater compares it.
-version: 1.0.1+5
+version: 1.0.1+6
 description: N5 Game player application foundation and integration staging.
 environment:
   sdk: '>=3.4.0 <4.0.0'

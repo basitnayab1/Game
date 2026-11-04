@@ -36,7 +36,8 @@ name="${version_name:-$name}"
 sed -i -E "s/^version: .*/version: ${name}+${code}/" pubspec.yaml
 echo "Building N5 Game ${name} (${code})"
 
-flutter build apk --release --dart-define=N5_API_BASE_URL="$API_URL"
+# Phones only: x86_64 is for emulators and adds ~8 MB to every download.
+flutter build apk --release --target-platform android-arm,android-arm64 --dart-define=N5_API_BASE_URL="$API_URL"
 apk="build/app/outputs/flutter-apk/app-release.apk"
 sha=$(sha256sum "$apk" | cut -d' ' -f1)
 
