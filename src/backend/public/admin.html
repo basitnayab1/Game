@@ -306,6 +306,35 @@
             </div>
           </div>
 
+          <!-- Platform money totals (from /admin/overview) -->
+          <div class="grid-stats" style="margin-top: 16px;">
+            <div class="stat-card">
+              <div class="stat-title">Total Deposits</div>
+              <div class="stat-val" style="color: var(--emerald);" id="stat-sum-deposits">Rs 0</div>
+              <div class="stat-sub">All completed deposits</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Total Withdrawals</div>
+              <div class="stat-val" style="color: var(--ruby);" id="stat-sum-withdrawals">Rs 0</div>
+              <div class="stat-sub">Paid out (before fee)</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Pending Withdrawals</div>
+              <div class="stat-val" style="color: var(--amber);" id="stat-sum-pending-withdrawals">Rs 0</div>
+              <div class="stat-sub">Still to be paid</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Player Balances</div>
+              <div class="stat-val" id="stat-sum-balances">Rs 0</div>
+              <div class="stat-sub">Money in all wallets now</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Withdrawal Fees Earned</div>
+              <div class="stat-val" style="color: var(--gold);" id="stat-sum-fees">Rs 0</div>
+              <div class="stat-sub">From completed withdrawals</div>
+            </div>
+          </div>
+
           <div class="table-card">
             <div class="card-header">
               <h3>Recent Pending Deposits</h3>
@@ -696,11 +725,26 @@
           loadWithdrawals(),
           loadPaymentMethods(),
           loadUsers(),
+          loadPlatformTotals(),
         ]);
         updateOverviewStats();
       } catch (e) {
         console.error('Error loading data:', e);
       }
+    }
+
+    async function loadPlatformTotals() {
+      try {
+        const res = await apiRequest('/admin/overview');
+        if (!res.ok) return;
+        const d = res.data || {};
+        const rs = (minor) => `Rs ${(Number(minor || 0) / 100).toLocaleString()}`;
+        document.getElementById('stat-sum-deposits').innerText = rs(d.total_deposits_minor);
+        document.getElementById('stat-sum-withdrawals').innerText = rs(d.total_withdrawals_minor);
+        document.getElementById('stat-sum-pending-withdrawals').innerText = rs(d.pending_withdrawals_minor);
+        document.getElementById('stat-sum-balances').innerText = rs(d.player_balances_minor);
+        document.getElementById('stat-sum-fees').innerText = rs(d.withdrawal_fees_minor);
+      } catch (e) { console.error(e); }
     }
 
     async function loadDeposits() {
@@ -877,7 +921,8 @@
             <td class="mono font-bold">${w.userPhone || w.userId}</td>
             <td><span class="badge badge-crypto">${w.gateway || '-'}</span></td>
             <td class="mono" style="color: var(--gold);">${w.accountPhone || '-'} (${w.accountTitle || ''})</td>
-            <td class="mono font-bold" style="color: var(--ruby);">Rs ${Number(w.amountPkr).toLocaleString()}</td>
+            <td class="mono font-bold" style="color: var(--ruby);">Send Rs ${Number(w.netPkr ?? w.amountPkr).toLocaleString()}
+              <div style="font-size: 11px; color: var(--text-dim); font-weight: 400;">of Rs ${Number(w.amountPkr).toLocaleString()} • fee Rs ${Number(w.feePkr || 0).toLocaleString()}</div></td>
             <td style="font-size: 12px;">${new Date(w.createdAt).toLocaleString()}</td>
             <td>${statusBadge}</td>
             <td>${actions}</td>
@@ -889,7 +934,7 @@
     // Manual payout: send the money yourself (EasyPaisa / JazzCash / bank), then record it here.
     async function markWithdrawalPaid(txId) {
       const w = withdrawalsData.find(x => x.transactionId === txId);
-      const amount = w ? `Rs ${Number(w.amountPkr).toLocaleString()} to ${w.gateway || ''} ${w.accountPhone || w.userPhone || 'player'}` : 'this withdrawal';
+      const amount = w ? `Rs ${Number(w.netPkr ?? w.amountPkr).toLocaleString()} to ${w.gateway || ''} ${w.accountPhone || w.userPhone || 'player'}` : 'this withdrawal';
       const input = prompt(`Enter the payment reference / TRX ID of the transfer you sent (${amount}):`);
       if (input === null) return;
       const payoutRef = input.trim();

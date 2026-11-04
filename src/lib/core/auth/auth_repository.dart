@@ -34,8 +34,10 @@ class AuthRepository {
     required String dob,
     required String password,
     String? referralCode,
+    String? countryCode,
   }) async {
     final response = await api.post('/auth/register', data: {
+      if (countryCode != null) 'countryCode': countryCode,
       'phone': phone,
       'dob': dob,
       'password': password,
@@ -130,8 +132,16 @@ String authErrorMessage(Object error) {
         return 'Yeh referral code ghalat hai. Check karein ya khaali chhor dein.';
       case 'PHONE_ALREADY_REGISTERED':
         return 'Yeh number pehle se registered hai! 1 number par sirf 1 account ban sakta hai.';
+      case 'UNDERAGE':
+        return 'N5 Game sirf 18 saal ya us se zyada umar ke logon ke liye hai.';
+      case 'INVALID_DOB':
+        return 'Date of birth sahi nahi. Calendar se dobara chunein.';
+      case 'INVALID_PASSWORD':
+        return 'Password kam az kam 8 characters ka hona chahiye.';
+      case 'INVALID_PHONE':
+        return 'Phone number sahi nahi. Dobara check karein.';
       case 'INVALID_REQUEST':
-        return 'Maloomat theek se bharein (password kam az kam 8 characters).';
+        return 'Maloomat theek se bharein.';
     }
     if (error.response == null) {
       return 'Server se rabta nahi ho saka. Internet check karein.';

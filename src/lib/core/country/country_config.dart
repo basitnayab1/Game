@@ -545,8 +545,9 @@ class CountryConfig {
 class CountryService {
   CountryService._();
 
-  // Default to USA or first configured country
-  static CountryConfig _activeCountry = CountryConfig.allCountries[0]; // USA
+  // Pakistan until the signed-in account says otherwise.
+  static CountryConfig _activeCountry =
+      CountryConfig.allCountries.firstWhere((c) => c.id == 'PK', orElse: () => CountryConfig.allCountries[0]);
   static final ValueNotifier<CountryConfig> countryNotifier = ValueNotifier<CountryConfig>(_activeCountry);
 
   static CountryConfig get active => _activeCountry;

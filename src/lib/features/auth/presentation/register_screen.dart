@@ -42,6 +42,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
+  Future<void> _pickDob() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(now.year - 20, now.month, now.day),
+      firstDate: DateTime(now.year - 100),
+      lastDate: now,
+      helpText: 'Date of birth',
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+    );
+    if (picked == null) return;
+    // The server expects YYYY-MM-DD.
+    _dob.text = '${picked.year.toString().padLeft(4, '0')}-'
+        '${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
     if (!_accepted) {
@@ -67,7 +83,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           phone: fullPhone,
           dob: _dob.text.trim(),
           password: _password.text,
-          referralCode: _referral.text);
+          referralCode: _referral.text,
+          countryCode: country.id);
       if (!mounted) return;
       context.go(AppRoutes.home);
     } catch (e) {
@@ -155,11 +172,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   AuthField(
                     controller: _dob,
                     label: 'Date of Birth',
-                    hint: 'YYYY-MM-DD',
+                    hint: 'Tap to choose',
                     icon: Icons.cake_outlined,
-                    keyboardType: TextInputType.datetime,
-                    validator: (v) =>
-                        requiredValue(v, 'Enter your date of birth'),
+                    onTap: _pickDob,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Choose your date of birth';
+                      return isAdult(v) ? null : 'You must be 18 or older to join';
+                    },
                   ),
                   const SizedBox(height: 16),
                   AuthField(
@@ -223,4 +242,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
+}
+
+/// Whether a YYYY-MM-DD date of birth is at least 18 years ago.
+bool isAdult(String dob, {DateTime? today}) {
+  final d = DateTime.tryParse(dob);
+  if (d == null) return false;
+  final now = today ?? DateTime.now();
+  final eighteenth = DateTime(d.year + 18, d.month, d.day);
+  return !eighteenth.isAfter(DateTime(now.year, now.month, now.day));
 }

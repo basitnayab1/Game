@@ -250,12 +250,15 @@ export async function listAdminWithdrawals(req: Request, res: Response) {
       userId: string;
       userPhone: string;
       amountMinor: string;
+      feeMinor: string;
+      netMinor: string;
       status: string;
       createdAt: string;
       metadata: any;
     }>(
       `SELECT t.id AS "transactionId", w.id AS "withdrawalId", t.user_id AS "userId",
               u.phone_e164 AS "userPhone", t.amount_minor AS "amountMinor",
+              w.fee_minor AS "feeMinor", w.net_minor AS "netMinor",
               t.status, t.created_at AS "createdAt", t.metadata
          FROM transactions t
          JOIN withdrawals w ON w.transaction_id = t.id
@@ -267,6 +270,9 @@ export async function listAdminWithdrawals(req: Request, res: Response) {
     const formatted = result.rows.map((r) => ({
       ...r,
       amountPkr: Number(r.amountMinor) / 100,
+      feePkr: Number(r.feeMinor) / 100,
+      // What the operator actually sends to the player.
+      netPkr: Number(r.netMinor) / 100,
       gateway: r.metadata?.gateway || 'easypaisa',
       accountPhone: r.metadata?.accountPhone || '',
       accountTitle: r.metadata?.accountTitle || '',

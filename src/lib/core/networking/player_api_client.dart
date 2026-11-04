@@ -67,7 +67,9 @@ class PlayerApiClient {
   final PlayerApiClientConfig config;
   final SecureStorage _storage;
   late final Dio _dio;
-  Future<bool>? _refreshFuture;
+  // Shared by every client: refresh tokens rotate, so two clients refreshing at
+  // once with the same token would get the second one rejected and sign the player out.
+  static Future<bool>? _refreshFuture;
 
   PlayerApiClient(this.config, {SecureStorage? storage})
       : _storage = storage ?? const SecureStorage() {
@@ -137,25 +139,24 @@ class PlayerApiClient {
           final isRefreshRequest = request.path.endsWith('/auth/refresh');
           final alreadyRetried = request.extra['n5Retried'] == true;
           final isFinancial = request.extra[n5FinancialMutation] == true;
-          final isSafeRetry = request.extra[n5SafeRetry] == true;
           final method = request.method.toUpperCase();
           final readOnlyMethod = method == 'GET' || method == 'HEAD' || method == 'OPTIONS';
 
-          // Never replay mutations. Even a caller accidentally marking a POST
-          // as safe cannot turn it into an automatic retry.
-          if (!isUnauthorized ||
-              isRefreshRequest ||
-              alreadyRetried ||
-              isFinancial ||
-              !isSafeRetry ||
-              !readOnlyMethod) {
+          if (!isUnauthorized || isRefreshRequest || alreadyRetried) {
             handler.next(error);
             return;
           }
 
+          // The access token expired: get a new one so the session continues.
           final refreshed = await _refreshAccessToken();
           if (!refreshed) {
-            await _storage.clearTokens();
+            handler.next(error);
+            return;
+          }
+
+          // Reads are replayed with the new token. Mutations never are (the server
+          // may already have accepted them); the player simply tries again.
+          if (isFinancial || !readOnlyMethod) {
             handler.next(error);
             return;
           }
@@ -222,6 +223,10 @@ class PlayerApiClient {
         refreshToken: newRefreshToken,
       );
       return true;
+    } on DioException catch (e) {
+      // Only a rejected refresh token ends the session; a network error does not.
+      if (e.response?.statusCode == 401) await _storage.clearTokens();
+      return false;
     } catch (_) {
       return false;
     }

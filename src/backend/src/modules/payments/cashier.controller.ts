@@ -1,3 +1,4 @@
+import { MIN_DEPOSIT_MINOR, withdrawalFeeMinor, withdrawalLimitError } from './withdrawal-fee.js';
 import { checkDepositAllowed } from '../responsibleGaming/enforcement.js';
 import type { Request, Response } from 'express';
 import type { DatabaseClient } from '../../core/database/database.types.js';
@@ -40,6 +41,9 @@ export async function requestDeposit(req: Request, res: Response) {
   }
 
   const amountMinor = Math.round(amount * 100);
+  if (amountMinor < MIN_DEPOSIT_MINOR) {
+    return res.status(400).json({ ok: false, error: { code: 'BELOW_MIN_DEPOSIT', message: `Minimum deposit is Rs ${MIN_DEPOSIT_MINOR / 100}.` } });
+  }
 
   const rgBlock = await checkDepositAllowed(db, userId, amountMinor);
   if (rgBlock) {
@@ -286,6 +290,10 @@ export async function requestWithdrawal(req: Request, res: Response) {
 
   const amountMinor = Math.round(amount * 100);
 
+  const limitError = withdrawalLimitError(amountMinor);
+  if (limitError) return res.status(400).json({ ok: false, error: limitError });
+  const feeMinor = withdrawalFeeMinor(amountMinor);
+
   // Extract idempotency key & compute hash
   const rawIdempotencyKey = PaymentIdempotencyService.extractIdempotencyKey(req);
   const idempotencyKey = rawIdempotencyKey || `wd:${userId}:${gateway.toLowerCase()}:${amountMinor}:${cleanPhone}`;
@@ -387,8 +395,8 @@ export async function requestWithdrawal(req: Request, res: Response) {
 
       await tx.query(
         `INSERT INTO withdrawals (id, transaction_id, amount_minor, fee_minor, net_minor, status)
-         VALUES ($1, $2, $3, 0, $3, 'pending')`,
-        [withdrawalId, txId, amountMinor]
+         VALUES ($1, $2, $3, $4, $5, 'pending')`,
+        [withdrawalId, txId, amountMinor, feeMinor, amountMinor - feeMinor]
       );
 
       return {
@@ -396,6 +404,8 @@ export async function requestWithdrawal(req: Request, res: Response) {
         withdrawalId,
         amountPkr: amount,
         amountMinor,
+        feeMinor,
+        netMinor: amountMinor - feeMinor,
         gateway,
         accountPhone: cleanPhone,
         status: 'pending',

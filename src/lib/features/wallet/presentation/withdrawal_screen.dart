@@ -3,8 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 import '../../../core/config/app_routes.dart';
 import '../../../core/country/country_config.dart';
-import '../../../core/country/country_picker_sheet.dart';
 import '../../../core/navigation/n5_navigation.dart';
+import '../data/withdrawal_fee.dart';
 import '../../../core/networking/player_api_client.dart';
 import '../../../core/storage/secure_storage.dart';
 import '../../../core/localization/localization_service.dart';
@@ -38,29 +38,26 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     }
   }
 
+  ScaffoldMessengerState? _messenger;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _messenger = ScaffoldMessenger.of(context);
+  }
+
   @override
   void dispose() {
+    // Errors shown here (e.g. the minimum amount) belong to this screen; don't
+    // leave them hanging over the lobby after the player goes back.
+    _messenger?.hideCurrentSnackBar();
     _amountController.dispose();
     _accountController.dispose();
     _accountNameController.dispose();
     super.dispose();
   }
 
-  void _onCountryChanged(CountryConfig country) {
-    setState(() {
-      _initDefaultMethod(country);
-      _amountController.clear();
-      _accountController.clear();
-      _accountNameController.clear();
-    });
-  }
-
-  double _calculateFee(double amount) {
-    if (amount <= 0) return 0;
-    // Transparent 1.5% processing fee or minimum flat
-    final percentageFee = amount * 0.015;
-    return percentageFee;
-  }
+  double _calculateFee(double amount) => withdrawalFee(amount);
 
   void _continue(CountryConfig country) {
     final amount = double.tryParse(_amountController.text.trim());
@@ -187,13 +184,6 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
           backgroundColor: const Color(0xFF131926),
           leading: const N5BackButton(fallbackRoute: AppRoutes.wallet),
           title: Text(context.tr('withdraw_funds', defaultText: 'Withdraw Funds'), style: const TextStyle(fontWeight: FontWeight.w700)),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.language_rounded, color: Color(0xFFF5C542)),
-              tooltip: context.tr('change_country', defaultText: 'Change Country'),
-              onPressed: () => showCountryPickerSheet(context, onSelected: _onCountryChanged),
-            ),
-          ],
         ),
         body: ValueListenableBuilder<CountryConfig>(
           valueListenable: CountryService.countryNotifier,
@@ -237,17 +227,6 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                             ),
                           ],
                         ),
-                      ),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFF5C542),
-                          side: const BorderSide(color: Color(0xFFF5C542)),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: () => showCountryPickerSheet(context, onSelected: _onCountryChanged),
-                        icon: const Icon(Icons.swap_horiz_rounded, size: 16),
-                        label: const Text('Change', style: TextStyle(fontSize: 12)),
                       ),
                     ],
                   ),
@@ -559,8 +538,9 @@ class _WithdrawalConfirmationScreenState extends State<WithdrawalConfirmationScr
       await dio.post(
         '${PlayerApiClientConfig.currentBaseUrl}/payments/withdrawals',
         data: {
-          'amount': widget.net,
-          'amountPkr': widget.net,
+          // The full amount: the server takes its fee from it and sends the rest.
+          'amount': widget.amount,
+          'amountPkr': widget.amount,
           'gateway': widget.method.id,
           'accountPhone': widget.accountDest,
           'accountTitle': widget.accountName,

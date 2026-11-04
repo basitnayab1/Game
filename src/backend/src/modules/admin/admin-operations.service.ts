@@ -13,7 +13,14 @@ export async function getAdminOverview(db: DatabaseClient) {
       (SELECT COUNT(*) FROM user_risk_flags WHERE status='open')::int AS open_risk_flags,
       (SELECT COUNT(*) FROM support_tickets WHERE status IN ('open','in_progress','reopened'))::int AS open_support,
       (SELECT COUNT(*) FROM game_sessions WHERE status IN ('created','active'))::int AS active_game_sessions,
-      (SELECT COUNT(*) FROM admin_users WHERE status='active')::int AS active_admins`);
+      (SELECT COUNT(*) FROM admin_users WHERE status='active')::int AS active_admins,
+      -- Platform money, in paisa.
+      (SELECT COALESCE(SUM(amount_minor),0) FROM transactions WHERE type='deposit' AND status='completed')::text AS total_deposits_minor,
+      (SELECT COALESCE(SUM(t.amount_minor),0) FROM transactions t WHERE t.type='withdrawal' AND t.status='completed')::text AS total_withdrawals_minor,
+      (SELECT COALESCE(SUM(w.fee_minor),0) FROM withdrawals w JOIN transactions t ON t.id=w.transaction_id
+        WHERE t.status='completed')::text AS withdrawal_fees_minor,
+      (SELECT COALESCE(SUM(t.amount_minor),0) FROM transactions t WHERE t.type='withdrawal' AND t.status IN ('pending','approved'))::text AS pending_withdrawals_minor,
+      (SELECT COALESCE(SUM(available_minor + locked_minor),0) FROM wallet_accounts)::text AS player_balances_minor`);
   return r.rows[0];
 }
 

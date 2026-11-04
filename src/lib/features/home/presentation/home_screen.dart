@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/auth/auth_repository.dart';
 import '../../../core/config/app_routes.dart';
 import '../../../core/country/country_config.dart';
-import '../../../core/country/country_picker_sheet.dart';
 import '../../../core/localization/localization_service.dart';
 import '../../../core/navigation/n5_navigation.dart';
 import '../../../core/networking/player_api_client.dart';
@@ -35,6 +35,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Currency follows the account's country, fixed at signup.
+    AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment())).me().then((me) {
+      CountryService.setCountryById((me['countryCode'] ?? 'PK') as String);
+    }).catchError((_) {});
     // Offer a newer app version once per session.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) AppUpdater.checkOnStart(context);
@@ -71,69 +75,19 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
-          // Country Selector Chip
+          // Account currency: fixed by the account's country, shown only.
           ValueListenableBuilder<CountryConfig>(
             valueListenable: CountryService.countryNotifier,
-            builder: (context, country, _) => InkWell(
-              borderRadius: BorderRadius.circular(20),
-              onTap: () => showCountryPickerSheet(context),
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 3),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E2838),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF2E3E58)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(country.flag, style: const TextStyle(fontSize: 15)),
-                    const SizedBox(width: 4),
-                    Text(
-                      country.currencyCode,
-                      style: const TextStyle(
-                        color: Color(0xFFF5C542),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            builder: (context, country, _) => _headerChip(country.currencyCode, const Color(0xFFF5C542)),
           ),
 
-          // Language Selector Chip
+          // Language: tap to change.
           ValueListenableBuilder<AppLanguage>(
             valueListenable: LocalizationService.languageNotifier,
             builder: (context, lang, _) => InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () => showLanguagePickerSheet(context),
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 3),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E2838),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF2E3E58)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(lang.flag, style: const TextStyle(fontSize: 14)),
-                    const SizedBox(width: 4),
-                    Text(
-                      lang.code.toUpperCase(),
-                      style: const TextStyle(
-                        color: Color(0xFF8B7CFF),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              child: _headerChip(lang.code.toUpperCase(), const Color(0xFF8B7CFF)),
             ),
           ),
 
@@ -150,6 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
               future: _balance,
               builder: (context, snap) => BalanceCard(
                 balance: snap.hasData ? formatMinor(snap.data!.availableMinor) : '--',
+                currency: snap.data?.currency ?? 'PKR',
+                pendingWithdrawal: (snap.data?.lockedMinor ?? 0) > 0 ? formatMinor(snap.data!.lockedMinor) : null,
                 onDeposit: () => _openAndRefresh(AppRoutes.deposit),
                 onWithdraw: () => _openAndRefresh(AppRoutes.withdrawal),
               ),
@@ -224,6 +180,17 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     ));
   }
+
+  Widget _headerChip(String text, Color color) => Container(
+        margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 3),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2838),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFF2E3E58)),
+        ),
+        child: Text(text, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w800)),
+      );
 
   Widget _welcomeCard(BuildContext context) => Container(
     constraints: const BoxConstraints(minHeight: 110),

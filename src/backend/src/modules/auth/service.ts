@@ -44,7 +44,32 @@ function safeEqualHex(a: string, b: string): boolean {
   return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
 }
 
-export async function register(input: { phone: string; dob: string; password: string; referralCode?: string }, db: DatabaseClient) {
+/**
+ * The account's country, fixed at signup: the one the player picked, or else
+ * the one their phone number belongs to. Pakistan when neither says.
+ */
+export function accountCountry(phone: string, picked?: string): string {
+  if (picked && /^[A-Za-z]{2}$/.test(picked)) return picked.toUpperCase();
+  if (phone.startsWith('+91')) return 'IN';
+  if (phone.startsWith('+880')) return 'BD';
+  if (phone.startsWith('+1')) return 'US';
+  return 'PK';
+}
+
+/** Rejects a date of birth that is not a real calendar date, or less than 18 years ago. */
+export function assertAdult(dob: string, today = new Date()) {
+  const [y, m, d] = dob.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  if (!y || date.getUTCFullYear() !== y || date.getUTCMonth() !== m - 1 || date.getUTCDate() !== d || y < 1900) {
+    throw new Error('INVALID_DOB');
+  }
+  const eighteenth = Date.UTC(y + 18, m - 1, d);
+  const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  if (eighteenth > todayUtc) throw new Error('UNDERAGE');
+}
+
+export async function register(input: { phone: string; dob: string; password: string; referralCode?: string; countryCode?: string }, db: DatabaseClient) {
+  assertAdult(input.dob);
   const phone = normalizePhone(input.phone);
   const passwordHash = await bcrypt.hash(input.password, env.BCRYPT_ROUNDS);
 
@@ -73,10 +98,10 @@ export async function register(input: { phone: string; dob: string; password: st
         );
       }
       await tx.query(
-        `INSERT INTO user_profiles (user_id, display_name, language_code)
-         VALUES ($1, $2, 'en')
+        `INSERT INTO user_profiles (user_id, display_name, language_code, country_code)
+         VALUES ($1, $2, 'en', $3)
          ON CONFLICT (user_id) DO NOTHING`,
-        [userId, phone],
+        [userId, phone, accountCountry(phone, input.countryCode)],
       );
       await tx.query(
         `INSERT INTO wallet_accounts (user_id, currency, available_minor, bonus_minor, locked_minor)

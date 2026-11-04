@@ -371,7 +371,7 @@ describe('Cashier Durable Idempotency & Reference Uniqueness Integration', () =>
         auth: { userId: testUserAId },
         app: { locals: { db } },
         body: {
-          amountPkr: 300,
+          amountPkr: 600,
           gateway: 'easypaisa',
           accountPhone: '03001234567',
         },
@@ -411,7 +411,7 @@ describe('Cashier Durable Idempotency & Reference Uniqueness Integration', () =>
       `SELECT available_minor FROM wallet_accounts WHERE id = $1`,
       [walletAccountAId],
     );
-    expect(BigInt(balAfter.rows[0].available_minor)).toBe(avBefore - 30000n);
+    expect(BigInt(balAfter.rows[0].available_minor)).toBe(avBefore - 60000n);
   });
 
   // -------------------------------------------------------------
@@ -427,12 +427,12 @@ describe('Cashier Durable Idempotency & Reference Uniqueness Integration', () =>
     );
     const startAvailable = BigInt(balBefore.rows[0].available_minor);
 
-    // Attempt withdrawal exceeding available balance (e.g. 99,999,999 PKR)
+    // Attempt withdrawal exceeding available balance (99,000 PKR, within the Rs 100,000 limit)
     const req: any = {
       auth: { userId: testUserBId },
       app: { locals: { db } },
       body: {
-        amountPkr: 99999999,
+        amountPkr: 99000,
         gateway: 'easypaisa',
         accountPhone: '03001234567',
       },
@@ -478,7 +478,7 @@ describe('Cashier Durable Idempotency & Reference Uniqueness Integration', () =>
       auth: { userId: testUserAId },
       app: { locals: { db } },
       body: {
-        amountPkr: 200,
+        amountPkr: 600,
         gateway: 'easypaisa',
         accountPhone: '03001112233',
       },
@@ -493,7 +493,7 @@ describe('Cashier Durable Idempotency & Reference Uniqueness Integration', () =>
       auth: { userId: testUserBId },
       app: { locals: { db } },
       body: {
-        amountPkr: 200,
+        amountPkr: 600,
         gateway: 'easypaisa',
         accountPhone: '03004445566',
       },

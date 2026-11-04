@@ -1,7 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
+import '../../../core/auth/auth_repository.dart';
 import '../../../core/config/app_routes.dart';
+import '../../../core/networking/player_api_client.dart';
+import '../../../core/storage/secure_storage.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,10 +20,29 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(seconds: 2), () {
+    final destination = _startRoute();
+    _timer = Timer(const Duration(seconds: 2), () async {
+      final route = await destination;
       if (!mounted) return;
-      context.go(AppRoutes.onboarding);
+      context.go(route);
     });
+  }
+
+  /// A signed-in player goes straight to the lobby; everyone else sees onboarding.
+  Future<String> _startRoute() async {
+    try {
+      final refresh = await const SecureStorage().readRefreshToken();
+      if (refresh == null || refresh.isEmpty) return AppRoutes.onboarding;
+      await AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment())).refresh();
+      return AppRoutes.home;
+    } on DioException catch (e) {
+      // Offline or server busy: keep the session and let the lobby retry.
+      if (e.response?.statusCode != 401) return AppRoutes.home;
+      await const SecureStorage().clearTokens();
+      return AppRoutes.login;
+    } catch (_) {
+      return AppRoutes.login;
+    }
   }
 
   @override

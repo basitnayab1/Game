@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:dio/dio.dart';
 import '../../../core/config/app_routes.dart';
 import '../../../core/country/country_config.dart';
-import '../../../core/country/country_picker_sheet.dart';
 import '../../../core/navigation/n5_navigation.dart';
 import '../../../core/networking/player_api_client.dart';
 import '../../../core/storage/secure_storage.dart';
@@ -80,16 +79,6 @@ class _DepositScreenState extends State<DepositScreen> {
     _amountController.dispose();
     _accountController.dispose();
     super.dispose();
-  }
-
-  void _onCountryChanged(CountryConfig country) {
-    setState(() {
-      _liveMethods = [];
-      _amountController.clear();
-      _accountController.clear();
-      _initDefaultMethod(country);
-    });
-    _fetchLiveMethods(country);
   }
 
   void _continue(CountryConfig country) {
@@ -236,13 +225,6 @@ class _DepositScreenState extends State<DepositScreen> {
           backgroundColor: const Color(0xFF131926),
           leading: const N5BackButton(fallbackRoute: AppRoutes.wallet),
           title: Text(context.tr('deposit_funds', defaultText: 'Deposit Funds'), style: const TextStyle(fontWeight: FontWeight.w700)),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.language_rounded, color: Color(0xFFF5C542)),
-              tooltip: context.tr('change_country', defaultText: 'Change Country'),
-              onPressed: () => showCountryPickerSheet(context, onSelected: _onCountryChanged),
-            ),
-          ],
         ),
         body: ValueListenableBuilder<CountryConfig>(
           valueListenable: CountryService.countryNotifier,
@@ -284,17 +266,6 @@ class _DepositScreenState extends State<DepositScreen> {
                             ),
                           ],
                         ),
-                      ),
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(0xFFF5C542),
-                          side: const BorderSide(color: Color(0xFFF5C542)),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        onPressed: () => showCountryPickerSheet(context, onSelected: _onCountryChanged),
-                        icon: const Icon(Icons.swap_horiz_rounded, size: 16),
-                        label: const Text('Change', style: TextStyle(fontSize: 12)),
                       ),
                     ],
                   ),

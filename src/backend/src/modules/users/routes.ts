@@ -11,8 +11,9 @@ usersRouter.get("/me", requireAuth, async (req: AuthRequest, res) => {
   }
 
   try {
-    const user = (await db.query<{ id: string; phone_e164: string; date_of_birth: string; phone_verified_at: string | null; status: string; created_at: string }>(
-      "SELECT id, phone_e164, to_char(date_of_birth, 'YYYY-MM-DD') AS date_of_birth, phone_verified_at, status, created_at FROM users WHERE id = $1",
+    const user = (await db.query<{ id: string; phone_e164: string; date_of_birth: string; phone_verified_at: string | null; status: string; created_at: string; country_code: string | null }>(
+      `SELECT u.id, u.phone_e164, to_char(u.date_of_birth, 'YYYY-MM-DD') AS date_of_birth, u.phone_verified_at, u.status, u.created_at, p.country_code
+         FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = $1`,
       [req.auth!.userId],
     )).rows[0];
     if (!user) {
@@ -29,6 +30,7 @@ usersRouter.get("/me", requireAuth, async (req: AuthRequest, res) => {
         phone: user.phone_e164,
         dob: user.date_of_birth,
         phoneVerified: Boolean(user.phone_verified_at),
+        countryCode: user.country_code ?? 'PK',
         status: user.status,
         createdAt: user.created_at,
       },

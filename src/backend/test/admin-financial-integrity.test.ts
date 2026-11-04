@@ -65,7 +65,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
     // 2. Create test wallet
     const walletRes = await db.query<{ id: string }>(
       `INSERT INTO wallet_accounts (user_id, currency, available_minor, locked_minor)
-       VALUES ($1, 'PKR', 100000, 0)
+       VALUES ($1, 'PKR', 10000000, 0)
        RETURNING id`,
       [testUserId]
     );
@@ -75,7 +75,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
     await db.query(
       `INSERT INTO ledger_entries (
          wallet_account_id, entry_type, direction, amount_minor, currency, reference_type, idempotency_key
-       ) VALUES ($1, 'initial_seed', 'credit', 100000, 'PKR', 'seed', $2)`,
+       ) VALUES ($1, 'initial_seed', 'credit', 10000000, 'PKR', 'seed', $2)`,
       [walletAccountId, `seed:${testUserId}`]
     );
   });
@@ -125,7 +125,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
     expect(appRes.statusCode).toBe(200);
     expect(appRes.body.ok).toBe(true);
     expect(appRes.body.data.status).toBe('completed');
-    expect(appRes.body.data.newBalancePkr).toBe(1500); // 1000 + 500 = 1500 PKR
+    expect(appRes.body.data.newBalancePkr).toBe(100500); // 100,000 + 500 PKR
 
     // Verify DB transaction status
     const txRow = (await db.query<{ status: string }>('SELECT status FROM transactions WHERE id = $1', [txId])).rows[0];
@@ -143,7 +143,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
     // Audit reconciliation: available + locked must equal ledger net
     const postAudit = await auditWalletReconciliation(db, walletAccountId);
     expect(postAudit.matched).toBe(true);
-    expect(postAudit.availableMinor).toBe(150000n);
+    expect(postAudit.availableMinor).toBe(10050000n);
     expect(postAudit.discrepancies).toHaveLength(0);
   });
 
@@ -156,7 +156,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
       auth: { userId: testUserId },
       headers: {},
       body: {
-        amountPkr: 200,
+        amountPkr: 600,
         gateway: 'easypaisa',
         accountPhone: '03007654321',
       },
@@ -241,7 +241,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
       auth: { userId: testUserId },
       headers: {},
       body: {
-        amountPkr: 150, // 15,000 minor
+        amountPkr: 1500, // 150,000 minor
         gateway: 'easypaisa',
         accountPhone: '03007654321',
       },
@@ -256,8 +256,8 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
       'SELECT available_minor, locked_minor FROM wallet_accounts WHERE id = $1',
       [walletAccountId]
     )).rows[0];
-    expect(BigInt(heldWallet.available_minor)).toBe(initialAvail - 15000n);
-    expect(BigInt(heldWallet.locked_minor)).toBe(initialLocked + 15000n);
+    expect(BigInt(heldWallet.available_minor)).toBe(initialAvail - 150000n);
+    expect(BigInt(heldWallet.locked_minor)).toBe(initialLocked + 150000n);
 
     // Reconciliation check during hold
     const holdAudit = await auditWalletReconciliation(db, walletAccountId);
@@ -284,7 +284,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
       'SELECT available_minor, locked_minor FROM wallet_accounts WHERE id = $1',
       [walletAccountId]
     )).rows[0];
-    expect(BigInt(postAppWallet.locked_minor)).toBe(initialLocked + 15000n);
+    expect(BigInt(postAppWallet.locked_minor)).toBe(initialLocked + 150000n);
 
     // No ledger debit has been written yet!
     const preDebit = await db.query('SELECT id FROM ledger_entries WHERE reference_id = $1', [txId]);
@@ -318,7 +318,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
     );
     expect(postDebit.rows.length).toBe(1);
     expect(postDebit.rows[0].direction).toBe('debit');
-    expect(postDebit.rows[0].amount_minor).toBe('15000');
+    expect(postDebit.rows[0].amount_minor).toBe('150000');
 
     // Final reconciliation check
     const finalAudit = await auditWalletReconciliation(db, walletAccountId);
@@ -342,7 +342,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
       auth: { userId: testUserId },
       headers: {},
       body: {
-        amountPkr: 100, // 10,000 minor
+        amountPkr: 1000, // 100,000 minor
         gateway: 'jazzcash',
         accountPhone: '03007654321',
       },
@@ -364,7 +364,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
 
     expect(failRes.statusCode).toBe(200);
     expect(failRes.body.data.status).toBe('failed');
-    expect(failRes.body.data.refundedPkr).toBe(100);
+    expect(failRes.body.data.refundedPkr).toBe(1000);
 
     // Wallet balance must be restored
     const restoredWallet = (await db.query<{ available_minor: string; locked_minor: string }>(
@@ -406,7 +406,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
       auth: { userId: testUserId },
       headers: {},
       body: {
-        amountPkr: 50,
+        amountPkr: 700,
         gateway: 'easypaisa',
         accountPhone: '03007654321',
       },
@@ -428,7 +428,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
 
     expect(rejRes.statusCode).toBe(200);
     expect(rejRes.body.data.status).toBe('rejected');
-    expect(rejRes.body.data.refundedPkr).toBe(50);
+    expect(rejRes.body.data.refundedPkr).toBe(700);
 
     // Restored balance
     const restoredWallet = (await db.query<{ available_minor: string }>(
@@ -475,7 +475,7 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
       auth: { userId: restrictedUserId },
       headers: {},
       body: {
-        amountPkr: 100,
+        amountPkr: 600,
         gateway: 'easypaisa',
         accountPhone: '03009998877',
       },

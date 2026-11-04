@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/country/country_config.dart';
 import '../../../core/localization/localization_service.dart';
 
 class BalanceCard extends StatelessWidget {
@@ -7,9 +6,17 @@ class BalanceCard extends StatelessWidget {
   final VoidCallback onDeposit;
   final VoidCallback onWithdraw;
 
+  /// The wallet's own currency, as reported by the server.
+  final String currency;
+
+  /// Amount held for withdrawals still being processed, if any.
+  final String? pendingWithdrawal;
+
   const BalanceCard({
     super.key,
     required this.balance,
+    this.currency = 'PKR',
+    this.pendingWithdrawal,
     required this.onDeposit,
     required this.onWithdraw,
   });
@@ -35,13 +42,17 @@ class BalanceCard extends StatelessWidget {
             style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 13),
           ),
           const SizedBox(height: 6),
-          ValueListenableBuilder<CountryConfig>(
-            valueListenable: CountryService.countryNotifier,
-            builder: (context, country, _) => Text(
-              '${country.currencyCode} ${country.currencySymbol} $balance',
-              style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800),
-            ),
+          Text(
+            '${currency == 'PKR' ? 'Rs' : currency} $balance',
+            style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800),
           ),
+          if (pendingWithdrawal != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Pending withdrawal: ${currency == 'PKR' ? 'Rs' : currency} $pendingWithdrawal',
+              style: const TextStyle(color: Color(0xFFF5C542), fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+          ],
           const SizedBox(height: 16),
           Row(children: [
             Expanded(

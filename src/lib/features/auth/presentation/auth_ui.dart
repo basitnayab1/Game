@@ -75,6 +75,9 @@ class AuthField extends StatelessWidget {
   final Widget? suffix;
   final String? Function(String?)? validator;
 
+  /// When set, the field is not typed into: tapping it calls [onTap] (e.g. a date picker).
+  final VoidCallback? onTap;
+
   const AuthField({
     super.key,
     required this.controller,
@@ -85,12 +88,15 @@ class AuthField extends StatelessWidget {
     this.obscureText = false,
     this.suffix,
     this.validator,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller: controller,
+      readOnly: onTap != null,
+      onTap: onTap,
       keyboardType: keyboardType,
       obscureText: obscureText,
       validator: validator,

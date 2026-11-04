@@ -7,7 +7,7 @@ import type {DatabaseClient} from '../../core/database/database.types.js';
 
 export const authRouter = Router();
 const authLimiter = createSensitiveRateLimiter(60_000, 10);
-const register = z.object({phone: z.string().min(7).max(20), dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), password: z.string().min(8).max(128), referralCode: z.string().max(64).optional()});
+const register = z.object({phone: z.string().min(7).max(20), dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), password: z.string().min(8).max(128), referralCode: z.string().max(64).optional(), countryCode: z.string().length(2).optional()});
 const login = z.object({phone: z.string().min(7), password: z.string().min(8)});
 
 function database(req: Request, res: Response): DatabaseClient | null {
@@ -33,8 +33,13 @@ authRouter.post('/register', authLimiter, async (req, res) => {
       });
     } else if (e.message === 'INVALID_REFERRAL_CODE') {
       res.status(400).json({error: 'INVALID_REFERRAL_CODE', message: 'This referral code does not exist.'});
+    } else if (e.message === 'UNDERAGE' || e.message === 'INVALID_DOB') {
+      res.status(400).json({error: e.message});
     } else if (e instanceof z.ZodError) {
-      res.status(400).json({error: 'INVALID_REQUEST', message: e.message});
+      // Name the field that is wrong, so the app can say what to fix.
+      const field = String(e.issues[0]?.path[0] ?? '');
+      const code = ({phone: 'INVALID_PHONE', dob: 'INVALID_DOB', password: 'INVALID_PASSWORD'} as Record<string, string>)[field] ?? 'INVALID_REQUEST';
+      res.status(400).json({error: code, message: e.issues[0]?.message});
     } else {
       console.error('[AUTH:REGISTRATION_FAILED]', e?.message);
       res.status(500).json({error: 'REGISTRATION_FAILED'});
