@@ -59,6 +59,7 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-https://n5game.com,https://admin.n5game.com}
       API_PREFIX: /api/v1
       APP_NAME: ${APP_NAME:-N5 Game}
+      SUPPORT_WHATSAPP: ${SUPPORT_WHATSAPP:-}
     volumes:
       # Drop the Android build here as N5-Game.apk; the landing page serves it at /download/android.
       - ./downloads:/app/downloads:ro

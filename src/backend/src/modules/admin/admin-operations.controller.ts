@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import type { DatabaseClient } from '../../core/database/database.types.js';
 import * as svc from './admin-operations.service.js';
+import { adminResetPassword } from '../auth/service.js';
 
 const isUuid = (val: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
 
@@ -250,3 +251,22 @@ export async function adminUserBalanceAdjust(req: Request, res: Response) {
   }
 }
 
+/** Issues a one-time temporary password for a player (support-led reset). */
+export async function adminUserPasswordReset(req: Request, res: Response) {
+  const c = ctx(req, res);
+  if (!c.db) return storeUnavailable(res);
+  const userId = String(req.params.userId || '').trim();
+  if (!isUuid(userId)) return res.status(400).json({ ok: false, error: { code: 'INVALID_USER_ID' } });
+  try {
+    const { temporaryPassword } = await adminResetPassword(c.admin.userId, userId, c.db);
+    return res.json({ ok: true, data: { temporaryPassword } });
+  } catch (e) {
+    const code = e instanceof Error ? e.message : '';
+    if (code === 'USER_NOT_FOUND') return res.status(404).json({ ok: false, error: { code } });
+    if (code === 'ADMIN_ACCOUNT') {
+      // 409, not 403: the admin panel signs the operator out on any 403.
+      return res.status(409).json({ ok: false, error: { code, message: 'Admin passwords are changed with the bootstrap command, not here.' } });
+    }
+    return fail(res, e);
+  }
+}

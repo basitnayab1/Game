@@ -11,8 +11,8 @@ usersRouter.get("/me", requireAuth, async (req: AuthRequest, res) => {
   }
 
   try {
-    const user = (await db.query<{ id: string; phone_e164: string; date_of_birth: string; phone_verified_at: string | null; status: string; created_at: string; country_code: string | null }>(
-      `SELECT u.id, u.phone_e164, to_char(u.date_of_birth, 'YYYY-MM-DD') AS date_of_birth, u.phone_verified_at, u.status, u.created_at, p.country_code
+    const user = (await db.query<{ id: string; phone_e164: string; date_of_birth: string; phone_verified_at: string | null; status: string; created_at: string; country_code: string | null; must_change_password: boolean }>(
+      `SELECT u.id, u.phone_e164, to_char(u.date_of_birth, 'YYYY-MM-DD') AS date_of_birth, u.phone_verified_at, u.status, u.created_at, u.must_change_password, p.country_code
          FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = $1`,
       [req.auth!.userId],
     )).rows[0];
@@ -31,6 +31,7 @@ usersRouter.get("/me", requireAuth, async (req: AuthRequest, res) => {
         dob: user.date_of_birth,
         phoneVerified: Boolean(user.phone_verified_at),
         countryCode: user.country_code ?? 'PK',
+        mustChangePassword: user.must_change_password,
         status: user.status,
         createdAt: user.created_at,
       },

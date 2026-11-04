@@ -50,9 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     try {
-      await _auth.login(fullPhone, _password.text);
+      final session = await _auth.login(fullPhone, _password.text);
       if (!mounted) return;
-      context.go(AppRoutes.home);
+      context.go(session.homeRoute);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(

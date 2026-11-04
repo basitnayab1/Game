@@ -32,8 +32,10 @@ export async function listAdminUsers(db: DatabaseClient, query?: string, status?
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
   const r = await db.query(`SELECT u.id,u.phone_e164,u.status,u.created_at,u.updated_at,up.username,up.display_name,up.country_code,up.language_code,
     COALESCE(k.status,'not_started') AS kyc_status,ks.metadata->>'documentNumber' AS cnic_number,ks.metadata->>'fullName' AS full_name,COALESCE(ks.metadata->>'documentType','id_card') AS document_type,ks.document_front,ks.document_back,
-    (SELECT COUNT(*) FROM user_risk_flags rf WHERE rf.user_id=u.id AND rf.status='open')::int AS open_risk_flags
+    (SELECT COUNT(*) FROM user_risk_flags rf WHERE rf.user_id=u.id AND rf.status='open')::int AS open_risk_flags,
+    COALESCE(w.available_minor,0)::text AS available_minor, COALESCE(w.locked_minor,0)::text AS locked_minor
     FROM users u LEFT JOIN user_profiles up ON up.user_id=u.id LEFT JOIN kyc_profiles k ON k.user_id=u.id
+    LEFT JOIN wallet_accounts w ON w.user_id=u.id AND w.currency='PKR'
     LEFT JOIN LATERAL (
       SELECT s.metadata,
         (SELECT d.storage_key FROM kyc_documents d WHERE d.kyc_profile_id=k.id AND d.document_type LIKE '%front' ORDER BY d.created_at DESC LIMIT 1) AS document_front,
@@ -60,7 +62,19 @@ export async function getAdminUser(db: DatabaseClient, userId: string) {
     db.query(`SELECT id,device_id,expires_at,revoked_at,created_at FROM user_sessions WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50`, [userId]),
     db.query(`SELECT id,status,reason_code,requested_at,closed_at FROM account_closure_requests WHERE user_id=$1 ORDER BY requested_at DESC LIMIT 20`, [userId]),
   ]);
-  return { user:u.rows[0], riskFlags:risk.rows, sessions:sessions.rows, closures:closure.rows };
+  // Money at a glance: current wallet and today's activity (Pakistan time), plus recent transactions.
+  const money = (await db.query(`
+    SELECT COALESCE(w.available_minor,0)::text AS available_minor, COALESCE(w.locked_minor,0)::text AS locked_minor,
+      (SELECT COALESCE(SUM(amount_minor),0) FROM transactions t WHERE t.user_id=$1 AND t.type='deposit' AND t.status='completed'
+          AND t.created_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Karachi') AT TIME ZONE 'Asia/Karachi')::text AS today_deposits_minor,
+      (SELECT COALESCE(SUM(amount_minor),0) FROM transactions t WHERE t.user_id=$1 AND t.type='withdrawal' AND t.status NOT IN ('failed','rejected','cancelled')
+          AND t.created_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Karachi') AT TIME ZONE 'Asia/Karachi')::text AS today_withdrawals_minor,
+      (SELECT COALESCE(SUM(amount_minor),0) FROM transactions t WHERE t.user_id=$1 AND t.type='deposit' AND t.status='completed')::text AS total_deposits_minor,
+      (SELECT COALESCE(SUM(amount_minor),0) FROM transactions t WHERE t.user_id=$1 AND t.type='withdrawal' AND t.status='completed')::text AS total_withdrawals_minor
+      FROM users u LEFT JOIN wallet_accounts w ON w.user_id=u.id AND w.currency='PKR' WHERE u.id=$1`, [userId])).rows[0];
+  const recent = await db.query(`SELECT id, type, status, amount_minor::text AS amount_minor, created_at FROM transactions
+    WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20`, [userId]);
+  return { user:u.rows[0], money, recentTransactions: recent.rows, riskFlags:risk.rows, sessions:sessions.rows, closures:closure.rows };
 }
 
 export async function reviewKyc(db: DatabaseClient, actorId: string, userId: string, status: string, note?: string) {

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Request, Response } from 'express';
+import { env } from '../../config/env.js';
 
 /**
  * The latest published Android build, read from downloads/version.json, which is
@@ -39,4 +40,10 @@ export function getLatestAndroidRelease(_req: Request, res: Response) {
       apkUrl: '/download/android',
     },
   });
+}
+
+/** How players reach support (e.g. to reset a forgotten password). */
+export function getSupportContact(_req: Request, res: Response) {
+  const digits = (env.SUPPORT_WHATSAPP ?? '').replace(/[^\d]/g, '');
+  return res.json({ ok: true, data: { whatsapp: digits ? `+${digits}` : null } });
 }

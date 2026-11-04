@@ -168,9 +168,47 @@ export async function changePassword(userId: string, sessionId: string, currentP
   if (!user || !(await bcrypt.compare(currentPassword, user.password_hash))) throw new InvalidCredentialsError();
   const hash = await bcrypt.hash(newPassword, env.BCRYPT_ROUNDS);
   await db.transaction(async (tx) => {
-    await tx.query('UPDATE users SET password_hash = $2, failed_login_count = 0, login_locked_until = NULL, updated_at = now() WHERE id = $1', [userId, hash]);
+    await tx.query('UPDATE users SET password_hash = $2, must_change_password = false, failed_login_count = 0, login_locked_until = NULL, updated_at = now() WHERE id = $1', [userId, hash]);
     await tx.query('UPDATE user_sessions SET revoked_at = now() WHERE user_id = $1 AND id <> $2 AND revoked_at IS NULL', [userId, sessionId]);
   });
+}
+
+/** A readable one-time password, e.g. N5-7K2Q-9MPX (no 0/O or 1/I to misread). */
+export function generateTemporaryPassword(): string {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const group = () => Array.from({ length: 4 }, () => alphabet[crypto.randomInt(alphabet.length)]).join('');
+  return `N5-${group()}-${group()}`;
+}
+
+/**
+ * Support-led reset: sets a temporary password the player must replace on next
+ * sign-in, unlocks the account and signs out every existing session. Admin
+ * accounts cannot be reset this way. Returns the temporary password once.
+ */
+export async function adminResetPassword(adminUserId: string, userId: string, db: DatabaseClient) {
+  const temporaryPassword = generateTemporaryPassword();
+  const hash = await bcrypt.hash(temporaryPassword, env.BCRYPT_ROUNDS);
+  await db.transaction(async (tx) => {
+    const user = (await tx.query<{ id: string; is_admin: boolean }>(
+      `SELECT u.id, EXISTS (SELECT 1 FROM admin_users a WHERE a.user_id = u.id) AS is_admin
+         FROM users u WHERE u.id = $1 FOR UPDATE`,
+      [userId],
+    )).rows[0];
+    if (!user) throw new Error('USER_NOT_FOUND');
+    if (user.is_admin) throw new Error('ADMIN_ACCOUNT');
+    await tx.query(
+      `UPDATE users SET password_hash = $2, must_change_password = true, failed_login_count = 0,
+              login_locked_until = NULL, updated_at = now() WHERE id = $1`,
+      [userId, hash],
+    );
+    await tx.query('UPDATE user_sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL', [userId]);
+    await tx.query(
+      `INSERT INTO audit_events (actor_user_id, action, entity_type, entity_id, metadata, created_at)
+       VALUES ($1, 'admin.user.password_reset', 'user', $2, '{}'::jsonb, now())`,
+      [adminUserId, userId],
+    );
+  });
+  return { temporaryPassword };
 }
 
 export async function refresh(refreshToken: string, db: DatabaseClient) {
@@ -207,12 +245,13 @@ export async function createSession(userId: string, db: DatabaseClient) {
      VALUES ($1, $2, $3, now() + ($4::text || ' days')::interval, now())`,
     [sid, userId, hashToken(refreshToken), String(env.REFRESH_TOKEN_DAYS)],
   );
-  const user = (await db.query<{ status: string }>('SELECT status FROM users WHERE id = $1', [userId])).rows[0];
+  const user = (await db.query<{ status: string; must_change_password: boolean }>(
+    'SELECT status, must_change_password FROM users WHERE id = $1', [userId])).rows[0];
 
   return {
     accessToken: access,
     refreshToken,
     expiresIn: env.ACCESS_TOKEN_MINUTES * 60,
-    user: { id: userId, status: user?.status ?? 'active' },
+    user: { id: userId, status: user?.status ?? 'active', mustChangePassword: user?.must_change_password === true },
   };
 }

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../config/app_routes.dart';
 import '../networking/player_api_client.dart';
 
 class AuthSession {
@@ -8,12 +9,19 @@ class AuthSession {
   final String userId;
   final String status;
 
+  /// True after a support reset: the player must set a new password first.
+  final bool mustChangePassword;
+
   const AuthSession({
     required this.accessToken,
     required this.refreshToken,
     required this.userId,
     required this.status,
+    this.mustChangePassword = false,
   });
+
+  /// Where to go after signing in.
+  String get homeRoute => mustChangePassword ? AppRoutes.newPassword : AppRoutes.home;
 }
 
 class AuthRepository {
@@ -102,6 +110,7 @@ class AuthRepository {
       refreshToken: refreshToken,
       userId: userId,
       status: (user['status'] ?? 'active') as String,
+      mustChangePassword: user['mustChangePassword'] == true,
     );
 
     await api.storage.saveTokens(
@@ -132,6 +141,8 @@ String authErrorMessage(Object error) {
         return 'Yeh referral code ghalat hai. Check karein ya khaali chhor dein.';
       case 'PHONE_ALREADY_REGISTERED':
         return 'Yeh number pehle se registered hai! 1 number par sirf 1 account ban sakta hai.';
+      case 'PASSWORD_CHANGE_REQUIRED':
+        return 'Pehle naya password rakhein.';
       case 'UNDERAGE':
         return 'N5 Game sirf 18 saal ya us se zyada umar ke logon ke liye hai.';
       case 'INVALID_DOB':

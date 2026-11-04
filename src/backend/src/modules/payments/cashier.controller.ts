@@ -1,3 +1,4 @@
+import { notifyUser, rupees } from '../notifications/notify.js';
 import { MIN_DEPOSIT_MINOR, withdrawalFeeMinor, withdrawalLimitError } from './withdrawal-fee.js';
 import { checkDepositAllowed } from '../responsibleGaming/enforcement.js';
 import type { Request, Response } from 'express';
@@ -707,6 +708,9 @@ export async function processPaymentWebhook(gateway: string, req: Request, res: 
         `UPDATE provider_webhook_events SET state = 'PROCESSED', processed_at = now() WHERE provider = $1 AND event_id = $2`,
         [normGateway, eventId]
       );
+
+      await notifyUser(tx, txRow.user_id, 'TRANSACTION', 'Deposit received',
+        `Rs ${rupees(txRow.amount_minor)} has been added to your wallet.`);
 
       return { status: 'completed' };
     });

@@ -21,7 +21,7 @@ import {
   claimTestBalanceController,
 } from '../modules/games/game-play.controller.js';
 import { getPromotions, activatePromotion, openPromotion, getCycles, openCycle } from '../modules/rewards/rewards.controller.js';
-import { getVip, getVipLevel, getVipHistory } from '../modules/vip_referral/vip.controller.js';
+import { getVip, getVipLevel, getVipHistory, getVipProgress, postVipSalaryClaim } from '../modules/vip_referral/vip.controller.js';
 import { getReferral, getReferralHistory } from '../modules/referral/referral.controller.js';
 import { getAgent, applyAgent } from '../modules/agent/agent.controller.js';
 import { getKyc, submitKyc, handleKycWebhook, getSecurity, revokeOthers } from '../modules/security_kyc/integration.controller.js';
@@ -37,7 +37,7 @@ import { adminPromotions, adminPromotionUpsert, adminRewardConfigs, adminRewardC
 import { adminVipLevels, adminVipLevelUpdate } from '../modules/admin/admin-vip.controller.js';
 import { createCashierRouter } from '../modules/payments/cashier.routes.js';
 import { getWheelStatus, spinLuckyWheel } from '../modules/rewards/lucky-wheel.controller.js';
-import { getLatestAndroidRelease } from '../modules/app-release/app-release.controller.js';
+import { getLatestAndroidRelease, getSupportContact } from '../modules/app-release/app-release.controller.js';
 import { createAdminFinancialRouter } from '../modules/admin/admin-financial.routes.js';
 
 /**
@@ -66,6 +66,8 @@ export function createApiRouter() {
   router.get('/vip', requireAuth, getVip);
   router.get('/vip/levels/:level', requireAuth, getVipLevel);
   router.get('/vip/rewards', requireAuth, getVipHistory);
+  router.get('/vip/progress', requireAuth, getVipProgress);
+  router.post('/vip/salary/claim', requireAuth, postVipSalaryClaim);
   router.get('/referral', requireAuth, getReferral);
   router.get('/referral/history', requireAuth, getReferralHistory);
   router.get('/agent', requireAuth, getAgent);
@@ -131,6 +133,7 @@ export function createApiRouter() {
   router.get('/games/crash/rounds/:roundId', requireAuth, getCrashRoundStatus);
   router.post('/games/crash/verify', verifyCrashFairnessController);
   router.get('/app/android/latest', getLatestAndroidRelease);
+  router.get('/app/support', getSupportContact);
   router.post('/games/play/spin', requireAuth, spinGameController);
   router.post('/games/spin', requireAuth, spinGameController);
   if (process.env.NODE_ENV !== 'production') {

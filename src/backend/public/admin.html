@@ -255,6 +255,11 @@
           </button>
         </li>
         <li>
+          <button class="nav-btn" onclick="switchTab('vip')">
+            <span class="nav-item-left">👑 VIP Levels</span>
+          </button>
+        </li>
+        <li>
           <button class="nav-btn" onclick="switchTab('settings')">
             <span class="nav-item-left">⚙️ Platform Config</span>
           </button>
@@ -463,13 +468,14 @@
             <div class="card-header">
               <h3>Registered Players</h3>
               <div class="header-actions">
-                <input type="text" id="user-search" class="input" placeholder="Search phone..." style="width: 180px; padding: 6px 12px;" oninput="filterUsers()">
+                <input type="text" id="user-search" class="input" placeholder="Search phone or ID..." style="width: 220px; padding: 6px 12px;" oninput="filterUsers()">
               </div>
             </div>
             <table>
               <thead>
                 <tr>
                   <th>Phone Number</th>
+                  <th>Balance</th>
                   <th>Country</th>
                   <th>Status</th>
                   <th>Registered</th>
@@ -477,7 +483,36 @@
                 </tr>
               </thead>
               <tbody id="users-table-body">
-                <tr><td colspan="5" style="text-align:center;">Loading players...</td></tr>
+                <tr><td colspan="6" style="text-align:center;">Loading players...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- TAB: VIP LEVELS -->
+        <section id="tab-vip" style="display: none;">
+          <div class="table-card">
+            <div class="card-header">
+              <h3>VIP Levels</h3>
+            </div>
+            <p style="color: var(--text-dim); font-size: 13px; margin: 0 0 12px;">
+              A player reaches a level when their <b>total deposits</b> and <b>total betting</b> (since joining) both reach that level's targets.
+              The level bonus is paid once on reaching the level. The daily salary can be claimed once a day in the app.
+              Leave both targets empty to keep a level switched off. All amounts are in Rs.
+            </p>
+            <table>
+              <thead>
+                <tr>
+                  <th>Level</th>
+                  <th>Deposit target</th>
+                  <th>Betting target</th>
+                  <th>Level bonus</th>
+                  <th>Daily salary</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="vip-table-body">
+                <tr><td colspan="6" style="text-align:center;">Loading...</td></tr>
               </tbody>
             </table>
           </div>
@@ -609,6 +644,36 @@
     </div>
   </div>
 
+  <div id="modal-reset" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Temporary Password</h3>
+        <button class="close-btn" onclick="closeResetModal()">&times;</button>
+      </div>
+      <p style="color: var(--text-dim); font-size: 13px; line-height: 1.5;">
+        Send this to <b id="reset-phone"></b> on WhatsApp. It works once: the player must choose a new password right after signing in.
+        It is shown only now and cannot be seen again.
+      </p>
+      <div style="display: flex; gap: 10px; align-items: center; margin: 16px 0;">
+        <input id="reset-password" class="input mono" readonly style="font-size: 20px; letter-spacing: 1px; text-align: center;">
+        <button type="button" class="btn btn-gold" onclick="copyResetPassword()">Copy</button>
+      </div>
+      <div style="display: flex; justify-content: flex-end;">
+        <button type="button" class="btn btn-outline" onclick="closeResetModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-user" class="modal-overlay">
+    <div class="modal-box" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3 id="user-detail-title">Player</h3>
+        <button class="close-btn" onclick="closeModal('modal-user')">&times;</button>
+      </div>
+      <div id="user-detail-body" style="max-height: 70vh; overflow: auto;">Loading...</div>
+    </div>
+  </div>
+
   <!-- SCRIPT -->
   <script>
     let token = localStorage.getItem('n5_admin_token') || '';
@@ -694,7 +759,7 @@
       const activeBtn = [...document.querySelectorAll('.nav-btn')].find(b => b.innerText.toLowerCase().includes(tab));
       if (activeBtn) activeBtn.classList.add('active');
 
-      const tabs = ['overview', 'deposits', 'withdrawals', 'payments', 'users', 'settings'];
+      const tabs = ['overview', 'deposits', 'withdrawals', 'payments', 'users', 'vip', 'settings'];
       tabs.forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         if (el) el.style.display = t === tab ? 'block' : 'none';
@@ -706,8 +771,10 @@
         withdrawals: ['Withdrawal Queue', 'Approve payout transactions or reject and auto-refund balance'],
         payments: ['Official Payment Channels', 'Add, edit, or toggle deposit accounts shown to players in the app'],
         users: ['Player Management', 'Audit registered players, ban/unban fraud accounts, adjust balances'],
+        vip: ['VIP Levels', 'Targets to reach each level, the level-up bonus and the daily salary'],
         settings: ['System Configuration', 'Platform financial limits, minimums, and maintenance mode']
       };
+      if (tab === 'vip') loadVipLevels();
       if (titles[tab]) {
         document.getElementById('page-title').innerText = titles[tab][0];
         document.getElementById('page-subtitle').innerText = titles[tab][1];
@@ -1100,7 +1167,7 @@
       if (!tbody) return;
 
       if (list.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No users found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No users found.</td></tr>';
         return;
       }
 
@@ -1108,12 +1175,15 @@
         const statusBadge = `<span class="badge badge-${u.status}">${u.status.toUpperCase()}</span>`;
         return `
           <tr>
-            <td class="mono font-bold">${u.phone_e164 || u.id}</td>
+            <td class="mono font-bold">${u.phone_e164 || u.id}<div style="font-size: 10px; color: var(--text-dim); font-weight: 400;">${u.id}</div></td>
+            <td class="mono font-bold" style="color: var(--emerald);">${rsMinor(u.available_minor)}${Number(u.locked_minor) > 0 ? `<div style="font-size: 11px; color: var(--amber); font-weight: 400;">+ ${rsMinor(u.locked_minor)} pending</div>` : ''}</td>
             <td>${u.country_code || 'PK'}</td>
             <td>${statusBadge}</td>
             <td style="font-size: 12px;">${new Date(u.created_at).toLocaleDateString()}</td>
             <td>
+              <button class="btn btn-emerald btn-sm" onclick="openUserDetail('${u.id}')">View</button>
               <button class="btn btn-gold btn-sm" onclick="openBalanceModal('${u.id}')">Adjust Balance</button>
+              <button class="btn btn-outline btn-sm" onclick="resetUserPassword('${u.id}', '${u.phone_e164 || ''}')">Reset Password</button>
               ${u.status === 'active' 
                 ? `<button class="btn btn-ruby btn-sm" onclick="setUserStatus('${u.id}', 'banned')">Ban</button>`
                 : `<button class="btn btn-emerald btn-sm" onclick="setUserStatus('${u.id}', 'active')">Unban / Activate</button>`
@@ -1146,6 +1216,107 @@
           alert(res.error?.message || 'Failed to update status.');
         }
       } catch (err) { alert(err.message); }
+    }
+
+    // Support-led reset: issue a one-time password after verifying the player.
+    async function resetUserPassword(userId, phone) {
+      if (!confirm(`Reset the password for ${phone || 'this player'}?\n\nOnly do this after confirming it is really them. They will be signed out everywhere.`)) return;
+      try {
+        const res = await apiRequest(`/admin/users/${userId}/reset-password`, 'POST', {});
+        if (!res.ok) {
+          alert(res.error?.message || res.error?.code || 'Password reset failed.');
+          return;
+        }
+        document.getElementById('reset-phone').innerText = phone || 'the player';
+        document.getElementById('reset-password').value = res.data.temporaryPassword;
+        document.getElementById('modal-reset').style.display = 'flex';
+      } catch (e) {
+        alert('Password reset failed.');
+      }
+    }
+
+    async function copyResetPassword() {
+      const field = document.getElementById('reset-password');
+      try { await navigator.clipboard.writeText(field.value); } catch (e) { field.select(); document.execCommand('copy'); }
+    }
+
+    function closeResetModal() {
+      // Clear it so the password is not left on screen.
+      document.getElementById('reset-password').value = '';
+      closeModal('modal-reset');
+    }
+
+    function rsMinor(minor) {
+      return `Rs ${(Number(minor || 0) / 100).toLocaleString()}`;
+    }
+
+    // Player detail: balance, today's deposits/withdrawals, totals and recent transactions.
+    async function openUserDetail(userId) {
+      document.getElementById('user-detail-body').innerHTML = 'Loading...';
+      document.getElementById('modal-user').style.display = 'flex';
+      try {
+        const res = await apiRequest(`/admin/users/${userId}`);
+        if (!res.ok) { document.getElementById('user-detail-body').innerText = 'Could not load this player.'; return; }
+        const { user, money, recentTransactions } = res.data;
+        document.getElementById('user-detail-title').innerText = user.phone_e164 || user.id;
+        const card = (title, value, color) => `<div class="stat-card"><div class="stat-title">${title}</div><div class="stat-val" style="font-size: 20px; color: ${color};">${value}</div></div>`;
+        const rows = (recentTransactions || []).map(t => `<tr>
+            <td style="font-size: 12px;">${new Date(t.created_at).toLocaleString()}</td>
+            <td>${t.type}</td>
+            <td class="mono">${rsMinor(t.amount_minor)}</td>
+            <td><span class="badge badge-${t.status}">${t.status}</span></td>
+          </tr>`).join('') || '<tr><td colspan="4" style="text-align:center; color: var(--text-dim);">No transactions yet.</td></tr>';
+        document.getElementById('user-detail-body').innerHTML = `
+          <div class="mono" style="font-size: 11px; color: var(--text-dim); margin-bottom: 12px;">ID: ${user.id} • ${user.status} • joined ${new Date(user.created_at).toLocaleDateString()}</div>
+          <div class="grid-stats">
+            ${card('Balance now', rsMinor(money.available_minor), 'var(--emerald)')}
+            ${card('Pending withdrawal', rsMinor(money.locked_minor), 'var(--amber)')}
+            ${card('Deposited today', rsMinor(money.today_deposits_minor), 'var(--gold)')}
+            ${card('Withdrawn today', rsMinor(money.today_withdrawals_minor), 'var(--ruby)')}
+            ${card('Total deposited', rsMinor(money.total_deposits_minor), 'var(--text)')}
+            ${card('Total withdrawn', rsMinor(money.total_withdrawals_minor), 'var(--text)')}
+          </div>
+          <h4 style="margin: 16px 0 8px;">Recent transactions</h4>
+          <table><thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table>`;
+      } catch (e) {
+        document.getElementById('user-detail-body').innerText = 'Could not load this player.';
+      }
+    }
+
+    // ---- VIP levels ----
+    let vipLevels = [];
+    async function loadVipLevels() {
+      try {
+        const res = await apiRequest('/admin/vip/levels');
+        if (!res.ok) return;
+        vipLevels = res.data || [];
+        const toRs = (minor) => minor == null ? '' : Number(minor) / 100;
+        document.getElementById('vip-table-body').innerHTML = vipLevels.map(l => `<tr>
+            <td class="font-bold">${l.name}<div style="font-size: 11px; color: var(--text-dim);">${l.tier}</div></td>
+            <td><input type="number" min="0" class="input" style="width: 110px;" id="vip-dep-${l.level}" value="${toRs(l.depositRequiredMinor)}" ${l.level === 1 ? 'disabled placeholder="start"' : ''}></td>
+            <td><input type="number" min="0" class="input" style="width: 110px;" id="vip-bet-${l.level}" value="${toRs(l.bettingRequiredMinor)}" ${l.level === 1 ? 'disabled placeholder="start"' : ''}></td>
+            <td><input type="number" min="0" class="input" style="width: 90px;" id="vip-bonus-${l.level}" value="${toRs(l.nextLevelBonusMinor)}" ${l.level === 1 ? 'disabled' : ''}></td>
+            <td><input type="number" min="0" class="input" style="width: 90px;" id="vip-salary-${l.level}" value="${toRs(l.dailySalaryMinor)}"></td>
+            <td><button class="btn btn-gold btn-sm" onclick="saveVipLevel(${l.level})">Save</button></td>
+          </tr>`).join('');
+      } catch (e) { console.error(e); }
+    }
+
+    async function saveVipLevel(level) {
+      const read = (id) => {
+        const el = document.getElementById(id);
+        if (!el || el.disabled || el.value === '') return undefined;
+        return Math.round(Number(el.value) * 100);
+      };
+      const body = {
+        depositRequiredMinor: read(`vip-dep-${level}`),
+        bettingRequiredMinor: read(`vip-bet-${level}`),
+        nextLevelBonusMinor: read(`vip-bonus-${level}`),
+        dailySalaryMinor: read(`vip-salary-${level}`),
+      };
+      const res = await apiRequest(`/admin/vip/levels/${level}`, 'PATCH', body);
+      if (res.ok) { alert(`VIP ${level} saved.`); loadVipLevels(); }
+      else alert(res.error?.code || res.error || 'Could not save this level.');
     }
 
     function openBalanceModal(userId) {

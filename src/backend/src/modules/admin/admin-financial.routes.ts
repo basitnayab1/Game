@@ -20,6 +20,7 @@ import {
 import {
   adminUserStatusUpdate,
   adminUserBalanceAdjust,
+  adminUserPasswordReset,
 } from './admin-operations.controller.js';
 
 export function createAdminFinancialRouter(): Router {
@@ -44,6 +45,7 @@ export function createAdminFinancialRouter(): Router {
   // Admin User Moderation & Balance Adjustments
   router.post('/users/:userId/status', requireAuth, requireAdmin, adminUserStatusUpdate);
   router.post('/users/:userId/adjust-balance', requireAuth, requireAdmin, adminUserBalanceAdjust);
+  router.post('/users/:userId/reset-password', requireAuth, requireAdmin, adminUserPasswordReset);
 
   return router;
 }

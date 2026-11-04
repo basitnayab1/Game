@@ -1,3 +1,4 @@
+import { notifyUser, rupees, withdrawalNetMinor } from '../notifications/notify.js';
 import type { Request, Response } from 'express';
 import type { DatabaseClient } from '../../core/database/database.types.js';
 
@@ -153,6 +154,8 @@ export async function approveDeposit(req: Request, res: Response) {
           JSON.stringify({ adminId, amountMinor: amountMinor.toString(), transactionId: txRow.id }),
         ]
       );
+      await notifyUser(tx, txRow.user_id, 'TRANSACTION', 'Deposit received',
+        `Rs ${rupees(amountMinor)} has been added to your wallet.`);
 
       return {
         transactionId: txRow.id,
@@ -186,8 +189,10 @@ export async function rejectDeposit(req: Request, res: Response) {
         id: string;
         type: string;
         status: string;
+        user_id: string;
+        amount_minor: string;
       }>(
-        `SELECT t.id, t.type, t.status
+        `SELECT t.id, t.type, t.status, t.user_id, t.amount_minor
            FROM transactions t
            LEFT JOIN deposits d ON d.transaction_id = t.id
           WHERE (t.id = $1 OR d.id = $1)
@@ -225,6 +230,8 @@ export async function rejectDeposit(req: Request, res: Response) {
           JSON.stringify({ adminId, reason, transactionId: txRow.id }),
         ]
       );
+      await notifyUser(tx, txRow.user_id, 'TRANSACTION', 'Deposit not approved',
+        `Your deposit of Rs ${rupees(txRow.amount_minor)} was not approved.${reason ? ` Reason: ${reason}` : ''}`);
 
       return { transactionId: txRow.id, status: 'rejected', reason };
     });
@@ -393,6 +400,8 @@ export async function approveWithdrawal(req: Request, res: Response) {
             JSON.stringify({ adminId, payoutRef, transactionId: txRow.id, amountMinor: amountMinor.toString() }),
           ]
         );
+        await notifyUser(tx, txRow.user_id, 'TRANSACTION', 'Withdrawal sent',
+          `Rs ${rupees(await withdrawalNetMinor(tx, txRow.id, amountMinor))} has been sent to your ${txRow.metadata?.gateway === 'jazzcash' ? 'JazzCash' : 'Easypaisa'} account.`);
 
         return {
           transactionId: txRow.id,
@@ -540,6 +549,8 @@ export async function recordWithdrawalPayoutSuccess(req: Request, res: Response)
           JSON.stringify({ adminId, payoutRef, transactionId: txRow.id, amountMinor: amountMinor.toString() }),
         ]
       );
+      await notifyUser(tx, txRow.user_id, 'TRANSACTION', 'Withdrawal sent',
+        `Rs ${rupees(await withdrawalNetMinor(tx, txRow.id, amountMinor))} has been sent to your ${txRow.metadata?.gateway === 'jazzcash' ? 'JazzCash' : 'Easypaisa'} account.`);
 
       return {
         transactionId: txRow.id,
@@ -636,6 +647,8 @@ export async function recordWithdrawalPayoutFailure(req: Request, res: Response)
           JSON.stringify({ adminId, reason, transactionId: txRow.id, refundedMinor: amountMinor.toString() }),
         ]
       );
+      await notifyUser(tx, txRow.user_id, 'TRANSACTION', 'Withdrawal failed',
+        `Your withdrawal of Rs ${rupees(amountMinor)} could not be sent and has been returned to your wallet.${reason ? ` Reason: ${reason}` : ''}`);
 
       return { transactionId: txRow.id, status: 'failed', refundedPkr: Number(amountMinor) / 100, reason };
     });
@@ -734,6 +747,8 @@ export async function rejectWithdrawal(req: Request, res: Response) {
           JSON.stringify({ adminId, reason, transactionId: txRow.id, refundedMinor: amountMinor.toString() }),
         ]
       );
+      await notifyUser(tx, txRow.user_id, 'TRANSACTION', 'Withdrawal rejected',
+        `Your withdrawal of Rs ${rupees(amountMinor)} was rejected and returned to your wallet.${reason ? ` Reason: ${reason}` : ''}`);
 
       return { transactionId: txRow.id, status: 'rejected', refundedPkr: Number(amountMinor) / 100, reason };
     });

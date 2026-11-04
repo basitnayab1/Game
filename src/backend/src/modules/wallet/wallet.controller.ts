@@ -1,3 +1,4 @@
+import { syncVipLevel } from '../vip_referral/vip.service.js';
 import type { Request, Response } from 'express';
 import type { DatabaseClient } from '../../core/database/database.types.js';
 import { requireWalletOwner } from './wallet-read.guard.js';
@@ -24,6 +25,9 @@ export async function getMyWallet(req: Request, res: Response) {
         error: { code: 'WALLET_REPOSITORY_NOT_CONFIGURED', message: 'Wallet service is not configured' },
       });
     }
+
+    // Bring the VIP level up to date (pays any level-up bonus) before reading the balance.
+    await syncVipLevel(db, userId).catch((e) => console.error('[VIP:SYNC]', e instanceof Error ? e.message : e));
 
     const row = (await db.query<{
       id: string;

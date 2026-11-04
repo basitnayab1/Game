@@ -126,6 +126,8 @@ describe('Admin Financial Integrity, Cross-Type Validation & Reconciliation', ()
     expect(appRes.body.ok).toBe(true);
     expect(appRes.body.data.status).toBe('completed');
     expect(appRes.body.data.newBalancePkr).toBe(100500); // 100,000 + 500 PKR
+    const notes = (await db.query<{ title: string; body: string }>(`SELECT title, body FROM notifications WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`, [testUserId])).rows;
+    expect(notes[0]).toMatchObject({ title: 'Deposit received', body: 'Rs 500 has been added to your wallet.' });
 
     // Verify DB transaction status
     const txRow = (await db.query<{ status: string }>('SELECT status FROM transactions WHERE id = $1', [txId])).rows[0];

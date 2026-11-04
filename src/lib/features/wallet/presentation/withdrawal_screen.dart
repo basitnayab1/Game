@@ -4,9 +4,9 @@ import 'package:dio/dio.dart';
 import '../../../core/config/app_routes.dart';
 import '../../../core/country/country_config.dart';
 import '../../../core/navigation/n5_navigation.dart';
+import '../data/wallet_api.dart';
 import '../data/withdrawal_fee.dart';
 import '../../../core/networking/player_api_client.dart';
-import '../../../core/storage/secure_storage.dart';
 import '../../../core/localization/localization_service.dart';
 
 class WithdrawalScreen extends StatefulWidget {
@@ -22,15 +22,42 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
   final _accountNameController = TextEditingController();
   PaymentMethodConfig? _selectedMethod;
 
+  /// The player's withdrawable balance in rupees (null until loaded).
+  double? _available;
+
   @override
   void initState() {
     super.initState();
     _initDefaultMethod(CountryService.active);
+    WalletApi(PlayerApiClient(PlayerApiClientConfig.fromEnvironment()))
+        .balance()
+        .then((w) {
+      if (mounted) setState(() => _available = w.availableMinor / 100);
+    }).catchError((_) {});
+  }
+
+  /// Puts [amount] in the field, never more than the balance: typing a bigger
+  /// number fills in the whole balance instead.
+  void _setAmount(double? amount, {bool fromTyping = false}) {
+    final available = _available;
+    if (amount != null && available != null && amount > available) {
+      final capped = available.truncateToDouble() == available
+          ? available.toStringAsFixed(0)
+          : available.toStringAsFixed(2);
+      _amountController.value = TextEditingValue(
+          text: capped,
+          selection: TextSelection.collapsed(offset: capped.length));
+    } else if (!fromTyping && amount != null) {
+      _amountController.text =
+          amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2);
+    }
+    setState(() {});
   }
 
   void _initDefaultMethod(CountryConfig country) {
     if (country.withdrawalMethods.isNotEmpty) {
-      if (_selectedMethod == null || !country.withdrawalMethods.any((m) => m.id == _selectedMethod!.id)) {
+      if (_selectedMethod == null ||
+          !country.withdrawalMethods.any((m) => m.id == _selectedMethod!.id)) {
         _selectedMethod = country.withdrawalMethods.first;
       }
     } else {
@@ -64,7 +91,19 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     if (amount == null || amount < country.minWithdrawal) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Minimum withdrawal for ${country.name} is ${country.currencySymbol}${country.minWithdrawal.toStringAsFixed(0)}.'),
+          content: Text(
+              'Minimum withdrawal for ${country.name} is ${country.currencySymbol}${country.minWithdrawal.toStringAsFixed(0)}.'),
+          backgroundColor: const Color(0xFFEF4444),
+        ),
+      );
+      return;
+    }
+
+    if (_available != null && amount > _available!) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Aap ke balance mein sirf Rs ${_available!.toStringAsFixed(0)} hain.'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -74,7 +113,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
     if (amount > country.maxWithdrawal) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Maximum withdrawal is ${country.currencySymbol}${country.maxWithdrawal.toStringAsFixed(0)}.'),
+          content: Text(
+              'Maximum withdrawal is ${country.currencySymbol}${country.maxWithdrawal.toStringAsFixed(0)}.'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -136,12 +176,15 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFF5C542).withOpacity(0.15) : const Color(0xFF1B2332),
+            color: isSelected
+                ? const Color(0xFFF5C542).withOpacity(0.15)
+                : const Color(0xFF1B2332),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
             method.icon,
-            color: isSelected ? const Color(0xFFF5C542) : const Color(0xFF94A3B8),
+            color:
+                isSelected ? const Color(0xFFF5C542) : const Color(0xFF94A3B8),
             size: 22,
           ),
         ),
@@ -183,7 +226,9 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
         appBar: AppBar(
           backgroundColor: const Color(0xFF131926),
           leading: const N5BackButton(fallbackRoute: AppRoutes.wallet),
-          title: Text(context.tr('withdraw_funds', defaultText: 'Withdraw Funds'), style: const TextStyle(fontWeight: FontWeight.w700)),
+          title: Text(
+              context.tr('withdraw_funds', defaultText: 'Withdraw Funds'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
         ),
         body: ValueListenableBuilder<CountryConfig>(
           valueListenable: CountryService.countryNotifier,
@@ -197,7 +242,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
               children: [
                 // 1. ACTIVE REGION CARD
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF1E2838), Color(0xFF151C28)],
@@ -223,7 +269,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                             ),
                             Text(
                               'Payout Currency: ${country.currencyCode} (${country.currencySymbol})',
-                              style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 13),
+                              style: const TextStyle(
+                                  color: Color(0xFFA8B0C0), fontSize: 13),
                             ),
                           ],
                         ),
@@ -239,20 +286,30 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   children: [
                     const Text(
                       'Withdrawal Amount',
-                      style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700),
                     ),
                     Text(
-                      'Min ${country.currencySymbol}${country.minWithdrawal.toStringAsFixed(0)}',
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                      'Min ${country.currencySymbol}${country.minWithdrawal.toStringAsFixed(0)}'
+                      '${_available == null ? '' : '  •  Available Rs ${_available!.toStringAsFixed(_available! == _available!.truncateToDouble() ? 0 : 2)}'}',
+                      style: const TextStyle(
+                          color: Color(0xFF94A3B8), fontSize: 12),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
-                  onChanged: (_) => setState(() {}),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700),
+                  onChanged: (v) =>
+                      _setAmount(double.tryParse(v.trim()), fromTyping: true),
                   decoration: InputDecoration(
                     prefixText: '${country.currencySymbol} ',
                     prefixStyle: const TextStyle(
@@ -274,7 +331,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFFF5C542), width: 1.5),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFF5C542), width: 1.5),
                     ),
                   ),
                 ),
@@ -285,16 +343,17 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: country.quickDepositAmounts.take(5).map((amount) {
-                    final display = amount >= 1000 ? '${(amount / 1000).toStringAsFixed(0)}k' : amount.toStringAsFixed(0);
+                    final display = amount >= 1000
+                        ? '${(amount / 1000).toStringAsFixed(0)}k'
+                        : amount.toStringAsFixed(0);
                     return InkWell(
                       borderRadius: BorderRadius.circular(10),
                       onTap: () {
-                        setState(() {
-                          _amountController.text = amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2);
-                        });
+                        _setAmount(amount);
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFF162030),
                           borderRadius: BorderRadius.circular(10),
@@ -317,8 +376,12 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                 // 3. WITHDRAWAL METHODS
                 Builder(
                   builder: (context) {
-                    final localMethods = country.withdrawalMethods.where((m) => !m.isCrypto).toList();
-                    final cryptoMethods = country.withdrawalMethods.where((m) => m.isCrypto).toList();
+                    final localMethods = country.withdrawalMethods
+                        .where((m) => !m.isCrypto)
+                        .toList();
+                    final cryptoMethods = country.withdrawalMethods
+                        .where((m) => m.isCrypto)
+                        .toList();
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,11 +392,17 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                             children: [
                               Text(
                                 'Local Payout Methods (${country.currencyCode})',
-                                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700),
                               ),
                               Text(
                                 '${country.flag} ${country.name}',
-                                style: const TextStyle(color: Color(0xFFF5C542), fontSize: 12, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                    color: Color(0xFFF5C542),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -347,18 +416,28 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                             children: [
                               const Text(
                                 'Crypto & Binance Payouts',
-                                style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981).withOpacity(0.15),
+                                  color:
+                                      const Color(0xFF10B981).withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: const Color(0xFF10B981).withOpacity(0.4)),
+                                  border: Border.all(
+                                      color: const Color(0xFF10B981)
+                                          .withOpacity(0.4)),
                                 ),
                                 child: const Text(
                                   'Global • Fast',
-                                  style: TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w700),
+                                  style: TextStyle(
+                                      color: Color(0xFF10B981),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700),
                                 ),
                               ),
                             ],
@@ -375,16 +454,22 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                 // 4. DESTINATION ACCOUNT DETAILS
                 if (_selectedMethod != null) ...[
                   Text(
-                    _selectedMethod!.accountFieldLabel ?? 'Your Destination Account',
-                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                    _selectedMethod!.accountFieldLabel ??
+                        'Your Destination Account',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _accountController,
                     style: const TextStyle(color: Colors.white, fontSize: 15),
                     decoration: InputDecoration(
-                      hintText: _selectedMethod!.accountFieldHint ?? 'Enter address or account number',
-                      hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
+                      hintText: _selectedMethod!.accountFieldHint ??
+                          'Enter address or account number',
+                      hintStyle:
+                          const TextStyle(color: Colors.white30, fontSize: 13),
                       filled: true,
                       fillColor: const Color(0xFF131926),
                       border: OutlineInputBorder(
@@ -397,16 +482,19 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Color(0xFFF5C542), width: 1.5),
+                        borderSide: const BorderSide(
+                            color: Color(0xFFF5C542), width: 1.5),
                       ),
                     ),
                   ),
                   const SizedBox(height: 14),
-
                   if (!_selectedMethod!.isCrypto) ...[
                     const Text(
                       'Account Holder Full Name',
-                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 8),
                     TextField(
@@ -414,20 +502,24 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                       style: const TextStyle(color: Colors.white, fontSize: 15),
                       decoration: InputDecoration(
                         hintText: 'Full legal name on account',
-                        hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
+                        hintStyle: const TextStyle(
+                            color: Colors.white30, fontSize: 13),
                         filled: true,
                         fillColor: const Color(0xFF131926),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFF293244)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFF293244)),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFF293244)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFF293244)),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(14),
-                          borderSide: const BorderSide(color: Color(0xFFF5C542), width: 1.5),
+                          borderSide: const BorderSide(
+                              color: Color(0xFFF5C542), width: 1.5),
                         ),
                       ),
                     ),
@@ -448,7 +540,8 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     children: [
                       const Text(
                         'Estimated Platform Fee (1.5%)',
-                        style: TextStyle(color: Color(0xFFA8B0C0), fontSize: 13),
+                        style:
+                            TextStyle(color: Color(0xFFA8B0C0), fontSize: 13),
                       ),
                       Text(
                         '${country.currencySymbol}${currentFee.toStringAsFixed(2)}',
@@ -470,13 +563,15 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF5C542),
                       foregroundColor: const Color(0xFF0F172A),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                       elevation: 2,
                     ),
                     onPressed: () => _continue(country),
                     child: const Text(
                       'Review Withdrawal Request',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
                     ),
                   ),
                 ),
@@ -516,27 +611,19 @@ class WithdrawalConfirmationScreen extends StatefulWidget {
   });
 
   @override
-  State<WithdrawalConfirmationScreen> createState() => _WithdrawalConfirmationScreenState();
+  State<WithdrawalConfirmationScreen> createState() =>
+      _WithdrawalConfirmationScreenState();
 }
 
-class _WithdrawalConfirmationScreenState extends State<WithdrawalConfirmationScreen> {
+class _WithdrawalConfirmationScreenState
+    extends State<WithdrawalConfirmationScreen> {
   bool _isSubmitting = false;
 
   Future<void> _submitWithdrawal() async {
     setState(() => _isSubmitting = true);
     try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 8),
-        receiveTimeout: const Duration(seconds: 8),
-      ));
-      final token = await const SecureStorage().readAccessToken();
-      final headers = <String, dynamic>{};
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
-
-      await dio.post(
-        '${PlayerApiClientConfig.currentBaseUrl}/payments/withdrawals',
+      await PlayerApiClient(PlayerApiClientConfig.fromEnvironment()).post(
+        '/payments/withdrawals',
         data: {
           // The full amount: the server takes its fee from it and sends the rest.
           'amount': widget.amount,
@@ -546,28 +633,41 @@ class _WithdrawalConfirmationScreenState extends State<WithdrawalConfirmationScr
           'accountTitle': widget.accountName,
           'currency': widget.country.currencyCode,
         },
-        options: Options(headers: headers),
       );
-    } catch (_) {
-      // Gracefully continue so offline or slow connections don't block
-    } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => WithdrawalStatusScreen(
-              amount: widget.amount,
-              fee: widget.fee,
-              net: widget.net,
-              methodName: widget.method.name,
-              currencySymbol: widget.country.currencySymbol,
-              currencyCode: widget.country.currencyCode,
-              accountDest: widget.accountDest,
-            ),
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WithdrawalStatusScreen(
+            amount: widget.amount,
+            fee: widget.fee,
+            net: widget.net,
+            methodName: widget.method.name,
+            currencySymbol: widget.country.currencySymbol,
+            currencyCode: widget.country.currencyCode,
+            accountDest: widget.accountDest,
           ),
-        );
-      }
+        ),
+      );
+    } on DioException catch (e) {
+      // Only a request the server accepted may show the success screen.
+      if (!mounted) return;
+      final body = e.response?.data;
+      final err = body is Map ? body['error'] : null;
+      final message = err is Map ? (err['message'] ?? err['code']) : null;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(message?.toString() ??
+            'Request failed. Check your internet and try again.'),
+        backgroundColor: const Color(0xFFEF4444),
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Request failed. Please try again.'),
+        backgroundColor: Color(0xFFEF4444),
+      ));
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -597,7 +697,8 @@ class _WithdrawalConfirmationScreenState extends State<WithdrawalConfirmationScr
                   children: [
                     Text(
                       '${widget.country.flag} ${widget.country.name}',
-                      style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 14),
+                      style: const TextStyle(
+                          color: Color(0xFFA8B0C0), fontSize: 14),
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -615,11 +716,14 @@ class _WithdrawalConfirmationScreenState extends State<WithdrawalConfirmationScr
                     const SizedBox(height: 20),
                     const Divider(color: Color(0xFF242E40)),
                     const SizedBox(height: 10),
-                    _row('Requested Amount', '${widget.country.currencySymbol}${widget.amount.toStringAsFixed(2)}'),
-                    _row('Platform Processing Fee', '${widget.country.currencySymbol}${widget.fee.toStringAsFixed(2)}'),
+                    _row('Requested Amount',
+                        '${widget.country.currencySymbol}${widget.amount.toStringAsFixed(2)}'),
+                    _row('Platform Processing Fee',
+                        '${widget.country.currencySymbol}${widget.fee.toStringAsFixed(2)}'),
                     _row('Payout Method', widget.method.name),
                     _row('Destination', widget.accountDest),
-                    if (widget.accountName.isNotEmpty) _row('Account Holder', widget.accountName),
+                    if (widget.accountName.isNotEmpty)
+                      _row('Account Holder', widget.accountName),
                     const SizedBox(height: 10),
                     const Divider(color: Color(0xFF242E40)),
                     const SizedBox(height: 10),
@@ -639,18 +743,21 @@ class _WithdrawalConfirmationScreenState extends State<WithdrawalConfirmationScr
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF5C542),
                     foregroundColor: const Color(0xFF0F172A),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: _isSubmitting ? null : _submitWithdrawal,
                   child: _isSubmitting
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF0F172A)),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: Color(0xFF0F172A)),
                         )
                       : const Text(
                           'Confirm & Submit Payout',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w800),
                         ),
                 ),
               ),
@@ -673,7 +780,8 @@ class _WithdrawalConfirmationScreenState extends State<WithdrawalConfirmationScr
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 13)),
+          Text(title,
+              style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 13)),
           Flexible(
             child: Text(
               value,
@@ -743,17 +851,26 @@ class WithdrawalStatusScreen extends StatelessWidget {
               const Text(
                 'Withdrawal Request Queued',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 10),
               Text(
                 'Payout: $currencyCode $currencySymbol${net.toStringAsFixed(2)} via $methodName',
-                style: const TextStyle(color: Color(0xFFF5C542), fontSize: 16, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                    color: Color(0xFFF5C542),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Text(
                 'To: $accountDest',
-                style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 12, fontFamily: 'monospace'),
+                style: const TextStyle(
+                    color: Color(0xFFA8B0C0),
+                    fontSize: 12,
+                    fontFamily: 'monospace'),
               ),
               const SizedBox(height: 24),
               Container(
@@ -766,7 +883,8 @@ class WithdrawalStatusScreen extends StatelessWidget {
                 child: const Text(
                   'Your withdrawal request has been received. Our automated payout engine will process your transfer after security and fraud screening.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFFA8B0C0), fontSize: 13, height: 1.4),
+                  style: TextStyle(
+                      color: Color(0xFFA8B0C0), fontSize: 13, height: 1.4),
                 ),
               ),
               const SizedBox(height: 36),
@@ -777,10 +895,13 @@ class WithdrawalStatusScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF5C542),
                     foregroundColor: const Color(0xFF0F172A),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () => context.go(AppRoutes.home),
-                  child: const Text('Back to Lobby', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  child: const Text('Back to Lobby',
+                      style:
+                          TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -788,7 +909,8 @@ class WithdrawalStatusScreen extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Color(0xFF293244)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () => context.go(AppRoutes.wallet),
                 child: const Text('Return to Wallet'),

@@ -6,7 +6,6 @@ import '../../../core/config/app_routes.dart';
 import '../../../core/country/country_config.dart';
 import '../../../core/navigation/n5_navigation.dart';
 import '../../../core/networking/player_api_client.dart';
-import '../../../core/storage/secure_storage.dart';
 import '../../../core/localization/localization_service.dart';
 
 class DepositScreen extends StatefulWidget {
@@ -43,12 +42,14 @@ class _DepositScreenState extends State<DepositScreen> {
       );
       if (resp.statusCode == 200 && resp.data?['ok'] == true) {
         final list = (resp.data['data'] as List<dynamic>? ?? [])
-            .map((item) => PaymentMethodConfig.fromJson(item as Map<String, dynamic>))
+            .map((item) =>
+                PaymentMethodConfig.fromJson(item as Map<String, dynamic>))
             .toList();
         if (mounted && list.isNotEmpty) {
           setState(() {
             _liveMethods = list;
-            if (_selectedMethod == null || !_liveMethods.any((m) => m.id == _selectedMethod!.id)) {
+            if (_selectedMethod == null ||
+                !_liveMethods.any((m) => m.id == _selectedMethod!.id)) {
               _selectedMethod = _liveMethods.first;
             }
           });
@@ -64,9 +65,11 @@ class _DepositScreenState extends State<DepositScreen> {
   }
 
   void _initDefaultMethod(CountryConfig country) {
-    final available = _liveMethods.isNotEmpty ? _liveMethods : country.depositMethods;
+    final available =
+        _liveMethods.isNotEmpty ? _liveMethods : country.depositMethods;
     if (available.isNotEmpty) {
-      if (_selectedMethod == null || !available.any((m) => m.id == _selectedMethod!.id)) {
+      if (_selectedMethod == null ||
+          !available.any((m) => m.id == _selectedMethod!.id)) {
         _selectedMethod = available.first;
       }
     } else {
@@ -86,7 +89,8 @@ class _DepositScreenState extends State<DepositScreen> {
     if (amount == null || amount < country.minDeposit) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Minimum deposit for ${country.name} is ${country.currencySymbol}${country.minDeposit.toStringAsFixed(0)}.'),
+          content: Text(
+              'Minimum deposit for ${country.name} is ${country.currencySymbol}${country.minDeposit.toStringAsFixed(0)}.'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -95,7 +99,8 @@ class _DepositScreenState extends State<DepositScreen> {
     if (amount > country.maxDeposit) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Maximum deposit is ${country.currencySymbol}${country.maxDeposit.toStringAsFixed(0)}.'),
+          content: Text(
+              'Maximum deposit is ${country.currencySymbol}${country.maxDeposit.toStringAsFixed(0)}.'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -111,7 +116,8 @@ class _DepositScreenState extends State<DepositScreen> {
 
     final accountRef = _accountController.text.trim();
     if (accountRef.isEmpty) {
-      final label = _selectedMethod?.accountFieldLabel ?? 'account / transaction details';
+      final label =
+          _selectedMethod?.accountFieldLabel ?? 'account / transaction details';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Please enter your $label.'),
@@ -152,12 +158,15 @@ class _DepositScreenState extends State<DepositScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFFF5C542).withOpacity(0.15) : const Color(0xFF1B2332),
+            color: isSelected
+                ? const Color(0xFFF5C542).withOpacity(0.15)
+                : const Color(0xFF1B2332),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
             method.icon,
-            color: isSelected ? const Color(0xFFF5C542) : const Color(0xFF94A3B8),
+            color:
+                isSelected ? const Color(0xFFF5C542) : const Color(0xFF94A3B8),
             size: 22,
           ),
         ),
@@ -180,7 +189,8 @@ class _DepositScreenState extends State<DepositScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xFF10B981).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: const Color(0xFF10B981).withOpacity(0.4)),
+                  border: Border.all(
+                      color: const Color(0xFF10B981).withOpacity(0.4)),
                 ),
                 child: Text(
                   method.badgeText,
@@ -224,7 +234,8 @@ class _DepositScreenState extends State<DepositScreen> {
         appBar: AppBar(
           backgroundColor: const Color(0xFF131926),
           leading: const N5BackButton(fallbackRoute: AppRoutes.wallet),
-          title: Text(context.tr('deposit_funds', defaultText: 'Deposit Funds'), style: const TextStyle(fontWeight: FontWeight.w700)),
+          title: Text(context.tr('deposit_funds', defaultText: 'Deposit Funds'),
+              style: const TextStyle(fontWeight: FontWeight.w700)),
         ),
         body: ValueListenableBuilder<CountryConfig>(
           valueListenable: CountryService.countryNotifier,
@@ -236,7 +247,8 @@ class _DepositScreenState extends State<DepositScreen> {
               children: [
                 // 1. ACTIVE REGION CARD
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
                       colors: [Color(0xFF1E2838), Color(0xFF151C28)],
@@ -262,7 +274,8 @@ class _DepositScreenState extends State<DepositScreen> {
                             ),
                             Text(
                               'Currency: ${country.currencyCode} (${country.currencySymbol})',
-                              style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 13),
+                              style: const TextStyle(
+                                  color: Color(0xFFA8B0C0), fontSize: 13),
                             ),
                           ],
                         ),
@@ -277,20 +290,29 @@ class _DepositScreenState extends State<DepositScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      context.tr('deposit_amount', defaultText: 'Deposit Amount'),
-                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700),
+                      context.tr('deposit_amount',
+                          defaultText: 'Deposit Amount'),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700),
                     ),
                     Text(
                       '${context.tr('min_deposit', defaultText: 'Min')} ${country.currencySymbol}${country.minDeposit.toStringAsFixed(0)}',
-                      style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
+                      style: const TextStyle(
+                          color: Color(0xFF94A3B8), fontSize: 12),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: _amountController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700),
                   decoration: InputDecoration(
                     prefixText: '${country.currencySymbol} ',
                     prefixStyle: const TextStyle(
@@ -298,7 +320,8 @@ class _DepositScreenState extends State<DepositScreen> {
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                     ),
-                    hintText: context.tr('enter_amount', defaultText: 'Enter amount'),
+                    hintText:
+                        context.tr('enter_amount', defaultText: 'Enter amount'),
                     hintStyle: const TextStyle(color: Colors.white30),
                     filled: true,
                     fillColor: const Color(0xFF131926),
@@ -312,7 +335,8 @@ class _DepositScreenState extends State<DepositScreen> {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: Color(0xFFF5C542), width: 1.5),
+                      borderSide: const BorderSide(
+                          color: Color(0xFFF5C542), width: 1.5),
                     ),
                   ),
                 ),
@@ -323,16 +347,20 @@ class _DepositScreenState extends State<DepositScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: country.quickDepositAmounts.map((amount) {
-                    final display = amount >= 1000 ? '${(amount / 1000).toStringAsFixed(0)}k' : amount.toStringAsFixed(0);
+                    final display = amount >= 1000
+                        ? '${(amount / 1000).toStringAsFixed(0)}k'
+                        : amount.toStringAsFixed(0);
                     return InkWell(
                       borderRadius: BorderRadius.circular(10),
                       onTap: () {
                         setState(() {
-                          _amountController.text = amount.toStringAsFixed(amount.truncateToDouble() == amount ? 0 : 2);
+                          _amountController.text = amount.toStringAsFixed(
+                              amount.truncateToDouble() == amount ? 0 : 2);
                         });
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFF162030),
                           borderRadius: BorderRadius.circular(10),
@@ -355,9 +383,13 @@ class _DepositScreenState extends State<DepositScreen> {
                 // 3. PAYMENT METHOD SELECTION
                 Builder(
                   builder: (context) {
-                    final allAvailable = _liveMethods.isNotEmpty ? _liveMethods : country.depositMethods;
-                    final localMethods = allAvailable.where((m) => !m.isCrypto).toList();
-                    final cryptoMethods = allAvailable.where((m) => m.isCrypto).toList();
+                    final allAvailable = _liveMethods.isNotEmpty
+                        ? _liveMethods
+                        : country.depositMethods;
+                    final localMethods =
+                        allAvailable.where((m) => !m.isCrypto).toList();
+                    final cryptoMethods =
+                        allAvailable.where((m) => m.isCrypto).toList();
 
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -370,10 +402,14 @@ class _DepositScreenState extends State<DepositScreen> {
                                 SizedBox(
                                   width: 14,
                                   height: 14,
-                                  child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFF5C542)),
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: Color(0xFFF5C542)),
                                 ),
                                 SizedBox(width: 8),
-                                Text('Syncing live payment channels...', style: TextStyle(color: Color(0xFFA8B0C0), fontSize: 11)),
+                                Text('Syncing live payment channels...',
+                                    style: TextStyle(
+                                        color: Color(0xFFA8B0C0),
+                                        fontSize: 11)),
                               ],
                             ),
                           ),
@@ -383,11 +419,17 @@ class _DepositScreenState extends State<DepositScreen> {
                             children: [
                               Text(
                                 '${context.tr('local_methods', defaultText: 'Local Methods')} (${country.currencyCode})',
-                                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700),
                               ),
                               Text(
                                 '${country.flag} ${country.name}',
-                                style: const TextStyle(color: Color(0xFFF5C542), fontSize: 12, fontWeight: FontWeight.w600),
+                                style: const TextStyle(
+                                    color: Color(0xFFF5C542),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600),
                               ),
                             ],
                           ),
@@ -400,19 +442,31 @@ class _DepositScreenState extends State<DepositScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                context.tr('crypto_methods', defaultText: 'Crypto & Binance Pay'),
-                                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700),
+                                context.tr('crypto_methods',
+                                    defaultText: 'Crypto & Binance Pay'),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF10B981).withOpacity(0.15),
+                                  color:
+                                      const Color(0xFF10B981).withOpacity(0.15),
                                   borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: const Color(0xFF10B981).withOpacity(0.4)),
+                                  border: Border.all(
+                                      color: const Color(0xFF10B981)
+                                          .withOpacity(0.4)),
                                 ),
                                 child: Text(
-                                  context.tr('instant_fee', defaultText: 'Instant • 0 Fee'),
-                                  style: const TextStyle(color: Color(0xFF10B981), fontSize: 10, fontWeight: FontWeight.w700),
+                                  context.tr('instant_fee',
+                                      defaultText: 'Instant • 0 Fee'),
+                                  style: const TextStyle(
+                                      color: Color(0xFF10B981),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700),
                                 ),
                               ),
                             ],
@@ -434,7 +488,8 @@ class _DepositScreenState extends State<DepositScreen> {
                       decoration: BoxDecoration(
                         color: const Color(0xFF1A2333),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: const Color(0xFFF5C542).withOpacity(0.4)),
+                        border: Border.all(
+                            color: const Color(0xFFF5C542).withOpacity(0.4)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,7 +498,9 @@ class _DepositScreenState extends State<DepositScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                _selectedMethod!.isCrypto ? 'Official Deposit Address' : 'Official Receiver ID',
+                                _selectedMethod!.isCrypto
+                                    ? 'Official Deposit Address'
+                                    : 'Official Receiver ID',
                                 style: const TextStyle(
                                   color: Color(0xFFF5C542),
                                   fontWeight: FontWeight.w700,
@@ -453,13 +510,17 @@ class _DepositScreenState extends State<DepositScreen> {
                               IconButton(
                                 constraints: const BoxConstraints(),
                                 padding: EdgeInsets.zero,
-                                icon: const Icon(Icons.copy_rounded, color: Color(0xFFF5C542), size: 18),
+                                icon: const Icon(Icons.copy_rounded,
+                                    color: Color(0xFFF5C542), size: 18),
                                 tooltip: 'Copy Address',
                                 onPressed: () {
-                                  Clipboard.setData(ClipboardData(text: _selectedMethod!.defaultDepositAddress!));
+                                  Clipboard.setData(ClipboardData(
+                                      text: _selectedMethod!
+                                          .defaultDepositAddress!));
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Copied: ${_selectedMethod!.defaultDepositAddress!}'),
+                                      content: Text(
+                                          'Copied: ${_selectedMethod!.defaultDepositAddress!}'),
                                       duration: const Duration(seconds: 2),
                                       backgroundColor: const Color(0xFF10B981),
                                     ),
@@ -482,7 +543,8 @@ class _DepositScreenState extends State<DepositScreen> {
                             const SizedBox(height: 8),
                             Text(
                               _selectedMethod!.instructions!,
-                              style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 12),
+                              style: const TextStyle(
+                                  color: Color(0xFFA8B0C0), fontSize: 12),
                             ),
                           ],
                         ],
@@ -500,12 +562,14 @@ class _DepositScreenState extends State<DepositScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(Icons.info_outline_rounded, color: Color(0xFFF5C542), size: 18),
+                          const Icon(Icons.info_outline_rounded,
+                              color: Color(0xFFF5C542), size: 18),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _selectedMethod!.instructions!,
-                              style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 12),
+                              style: const TextStyle(
+                                  color: Color(0xFFA8B0C0), fontSize: 12),
                             ),
                           ),
                         ],
@@ -516,16 +580,22 @@ class _DepositScreenState extends State<DepositScreen> {
 
                   // Reference / Account Input Field
                   Text(
-                    _selectedMethod!.accountFieldLabel ?? 'Sender Account / Reference ID',
-                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w700),
+                    _selectedMethod!.accountFieldLabel ??
+                        'Sender Account / Reference ID',
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _accountController,
                     style: const TextStyle(color: Colors.white, fontSize: 15),
                     decoration: InputDecoration(
-                      hintText: _selectedMethod!.accountFieldHint ?? 'Enter transaction hash / sender ID',
-                      hintStyle: const TextStyle(color: Colors.white30, fontSize: 13),
+                      hintText: _selectedMethod!.accountFieldHint ??
+                          'Enter transaction hash / sender ID',
+                      hintStyle:
+                          const TextStyle(color: Colors.white30, fontSize: 13),
                       filled: true,
                       fillColor: const Color(0xFF131926),
                       border: OutlineInputBorder(
@@ -538,7 +608,8 @@ class _DepositScreenState extends State<DepositScreen> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(14),
-                        borderSide: const BorderSide(color: Color(0xFFF5C542), width: 1.5),
+                        borderSide: const BorderSide(
+                            color: Color(0xFFF5C542), width: 1.5),
                       ),
                     ),
                   ),
@@ -552,13 +623,16 @@ class _DepositScreenState extends State<DepositScreen> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFFF5C542),
                       foregroundColor: const Color(0xFF0F172A),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
                       elevation: 2,
                     ),
                     onPressed: () => _continue(country),
                     child: Text(
-                      context.tr('review_confirm_deposit', defaultText: 'Review & Confirm Deposit'),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      context.tr('review_confirm_deposit',
+                          defaultText: 'Review & Confirm Deposit'),
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w800),
                     ),
                   ),
                 ),
@@ -596,7 +670,8 @@ class PaymentConfirmationScreen extends StatefulWidget {
   });
 
   @override
-  State<PaymentConfirmationScreen> createState() => _PaymentConfirmationScreenState();
+  State<PaymentConfirmationScreen> createState() =>
+      _PaymentConfirmationScreenState();
 }
 
 class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
@@ -605,18 +680,8 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
   Future<void> _submitDeposit() async {
     setState(() => _isSubmitting = true);
     try {
-      final dio = Dio(BaseOptions(
-        connectTimeout: const Duration(seconds: 8),
-        receiveTimeout: const Duration(seconds: 8),
-      ));
-      final token = await const SecureStorage().readAccessToken();
-      final headers = <String, dynamic>{};
-      if (token != null && token.isNotEmpty) {
-        headers['Authorization'] = 'Bearer $token';
-      }
-
-      await dio.post(
-        '${PlayerApiClientConfig.currentBaseUrl}/payments/deposits',
+      await PlayerApiClient(PlayerApiClientConfig.fromEnvironment()).post(
+        '/payments/deposits',
         data: {
           'amount': widget.amount,
           'amountPkr': widget.amount,
@@ -625,26 +690,39 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
           'senderPhone': widget.accountRef,
           'currency': widget.country.currencyCode,
         },
-        options: Options(headers: headers),
       );
-    } catch (_) {
-      // Gracefully continue to status screen so network latency doesn't hang UI
-    } finally {
-      if (mounted) {
-        setState(() => _isSubmitting = false);
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => DepositStatusScreen(
-              amount: widget.amount,
-              methodName: widget.method.name,
-              currencySymbol: widget.country.currencySymbol,
-              currencyCode: widget.country.currencyCode,
-              accountRef: widget.accountRef,
-            ),
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DepositStatusScreen(
+            amount: widget.amount,
+            methodName: widget.method.name,
+            currencySymbol: widget.country.currencySymbol,
+            currencyCode: widget.country.currencyCode,
+            accountRef: widget.accountRef,
           ),
-        );
-      }
+        ),
+      );
+    } on DioException catch (e) {
+      // Only a request the server accepted may show the success screen.
+      if (!mounted) return;
+      final body = e.response?.data;
+      final err = body is Map ? body['error'] : null;
+      final message = err is Map ? (err['message'] ?? err['code']) : null;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(message?.toString() ??
+            'Request failed. Check your internet and try again.'),
+        backgroundColor: const Color(0xFFEF4444),
+      ));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Request failed. Please try again.'),
+        backgroundColor: Color(0xFFEF4444),
+      ));
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -677,7 +755,8 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                   children: [
                     Text(
                       '${widget.country.flag} ${widget.country.name}',
-                      style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 14),
+                      style: const TextStyle(
+                          color: Color(0xFFA8B0C0), fontSize: 14),
                     ),
                     const SizedBox(height: 10),
                     Text(
@@ -694,7 +773,11 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                     _row('Payment Method', widget.method.name),
                     _row('Category', widget.method.category.name.toUpperCase()),
                     _row('Reference / ID', widget.accountRef),
-                    _row('Network / Fee', widget.method.badgeText.isNotEmpty ? widget.method.badgeText : 'Free • 0%'),
+                    _row(
+                        'Network / Fee',
+                        widget.method.badgeText.isNotEmpty
+                            ? widget.method.badgeText
+                            : 'Free • 0%'),
                     const SizedBox(height: 10),
                     const Divider(color: Color(0xFF242E40)),
                     const SizedBox(height: 10),
@@ -714,18 +797,22 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF5C542),
                     foregroundColor: const Color(0xFF0F172A),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: _isSubmitting ? null : _submitDeposit,
                   child: _isSubmitting
                       ? const SizedBox(
                           width: 22,
                           height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2.5, color: Color(0xFF0F172A)),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2.5, color: Color(0xFF0F172A)),
                         )
                       : Text(
-                          context.tr('confirm_submit_deposit', defaultText: 'Confirm & Submit Deposit'),
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                          context.tr('confirm_submit_deposit',
+                              defaultText: 'Confirm & Submit Deposit'),
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w800),
                         ),
                 ),
               ),
@@ -748,7 +835,8 @@ class _PaymentConfirmationScreenState extends State<PaymentConfirmationScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 13)),
+          Text(title,
+              style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 13)),
           Flexible(
             child: Text(
               value,
@@ -791,7 +879,8 @@ class DepositStatusScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: const Color(0xFF131926),
           leading: const N5BackButton(fallbackRoute: AppRoutes.wallet),
-          title: Text(context.tr('deposit_submitted', defaultText: 'Deposit Submitted')),
+          title: Text(context.tr('deposit_submitted',
+              defaultText: 'Deposit Submitted')),
         ),
         body: Padding(
           padding: const EdgeInsets.all(24),
@@ -812,19 +901,29 @@ class DepositStatusScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                context.tr('deposit_submitted', defaultText: 'Deposit Under Verification'),
+                context.tr('deposit_submitted',
+                    defaultText: 'Deposit Under Verification'),
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800),
               ),
               const SizedBox(height: 10),
               Text(
                 '$currencyCode $currencySymbol${amount.toStringAsFixed(2)} via $methodName',
-                style: const TextStyle(color: Color(0xFFF5C542), fontSize: 16, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                    color: Color(0xFFF5C542),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Text(
                 'Ref: $accountRef',
-                style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 12, fontFamily: 'monospace'),
+                style: const TextStyle(
+                    color: Color(0xFFA8B0C0),
+                    fontSize: 12,
+                    fontFamily: 'monospace'),
               ),
               const SizedBox(height: 24),
               Container(
@@ -835,9 +934,12 @@ class DepositStatusScreen extends StatelessWidget {
                   border: Border.all(color: const Color(0xFF242E40)),
                 ),
                 child: Text(
-                  context.tr('deposit_ticket_msg', defaultText: 'Your deposit ticket has been sent to our automated matching system. Most transactions complete within 1-5 minutes once confirmed on the network or by the banking provider.'),
+                  context.tr('deposit_ticket_msg',
+                      defaultText:
+                          'Your deposit ticket has been sent to our automated matching system. Most transactions complete within 1-5 minutes once confirmed on the network or by the banking provider.'),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 13, height: 1.4),
+                  style: const TextStyle(
+                      color: Color(0xFFA8B0C0), fontSize: 13, height: 1.4),
                 ),
               ),
               const SizedBox(height: 36),
@@ -848,10 +950,14 @@ class DepositStatusScreen extends StatelessWidget {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFF5C542),
                     foregroundColor: const Color(0xFF0F172A),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14)),
                   ),
                   onPressed: () => context.go(AppRoutes.home),
-                  child: Text(context.tr('back_to_lobby', defaultText: 'Back to Lobby'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                  child: Text(
+                      context.tr('back_to_lobby', defaultText: 'Back to Lobby'),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w800, fontSize: 16)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -859,10 +965,12 @@ class DepositStatusScreen extends StatelessWidget {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: const BorderSide(color: Color(0xFF293244)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
                 ),
                 onPressed: () => context.go(AppRoutes.wallet),
-                child: Text(context.tr('view_wallet', defaultText: 'View Wallet Balance')),
+                child: Text(context.tr('view_wallet',
+                    defaultText: 'View Wallet Balance')),
               ),
             ],
           ),

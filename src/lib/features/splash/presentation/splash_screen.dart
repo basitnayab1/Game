@@ -33,8 +33,8 @@ class _SplashScreenState extends State<SplashScreen> {
     try {
       final refresh = await const SecureStorage().readRefreshToken();
       if (refresh == null || refresh.isEmpty) return AppRoutes.onboarding;
-      await AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment())).refresh();
-      return AppRoutes.home;
+      final session = await AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment())).refresh();
+      return session.homeRoute;
     } on DioException catch (e) {
       // Offline or server busy: keep the session and let the lobby retry.
       if (e.response?.statusCode != 401) return AppRoutes.home;
