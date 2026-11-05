@@ -342,7 +342,10 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: country.quickDepositAmounts.take(5).map((amount) {
+                  // Withdrawal shortcuts start at the minimum withdrawal.
+                  children: [500.0, 1000.0, 3000.0, 5000.0, 10000.0]
+                      .where((a) => a >= country.minWithdrawal && a <= country.maxWithdrawal)
+                      .map((amount) {
                     final display = amount >= 1000
                         ? '${(amount / 1000).toStringAsFixed(0)}k'
                         : amount.toStringAsFixed(0);

@@ -531,10 +531,11 @@ describe('Game Integration & End-to-End Lifecycle Suite', () => {
       expect(json.error.code).toBe('ROUND_NOT_FOUND');
     });
 
-    it('does not mount demo faucet in production environment', async () => {
+    it('has no free-credit faucet in any environment', async () => {
       const oldEnv = process.env.NODE_ENV;
       try {
-        process.env.NODE_ENV = 'production';
+        // Staging used to mount a faucet that let players add money to their own wallet.
+        process.env.NODE_ENV = 'staging';
         // Re-create app in production mode
         const prodApp = createApp(db);
         const prodServer = prodApp.listen(0);
@@ -545,7 +546,7 @@ describe('Game Integration & End-to-End Lifecycle Suite', () => {
           headers: { Authorization: `Bearer ${tokenA}` },
         });
 
-        // In production, the demo faucet route is unmounted and returns 404 ROUTE_NOT_FOUND
+        // The route does not exist: wallet balances only change through deposits, play and withdrawals.
         expect(res.status).toBe(404);
         const json = await res.json();
         expect(json.error.code).toBe('ROUTE_NOT_FOUND');

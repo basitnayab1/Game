@@ -336,7 +336,6 @@
 
   <div class="footer-bar">
     <span>Server-Authoritative Provably Fair • 96% RTP</span>
-    <span class="link-btn" onclick="claimFaucet()">+ Add PKR 1,000 Faucet</span>
   </div>
 
   <script>
@@ -658,25 +657,6 @@
       badge.className = `history-badge ${colorClass}`;
       badge.innerText = `${mult.toFixed(2)}x`;
       ribbon.prepend(badge);
-    }
-
-    async function claimFaucet() {
-      if (!token) return;
-      try {
-        const res = await fetch('/api/v1/games/play/faucet', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const d = await res.json();
-        if (d.ok) {
-          alert('🎉 +PKR 1,000 credited to wallet!');
-          fetchWallet();
-        } else {
-          alert('Faucet unavailable: ' + (d.error?.message || 'Demo faucet disabled.'));
-        }
-      } catch (_) {
-        alert('Demo faucet is not available.');
-      }
     }
 
     window.onload = init;

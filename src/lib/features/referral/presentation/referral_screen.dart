@@ -59,7 +59,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                _summaryCard(),
+                _summaryCard((s['earnedMinor'] as num?) ?? 0),
                 const SizedBox(height: 16),
                 _codeCard(context, code),
                 const SizedBox(height: 16),
@@ -84,7 +84,7 @@ class _ReferralScreenState extends State<ReferralScreen> {
                 ListTile(
                   leading: const Icon(Icons.history),
                   title: const Text('Referral History'),
-                  subtitle: const Text('View referral status and rewards'),
+                  subtitle: const Text("Each friend's deposits, betting and your earnings"),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push(AppRoutes.referralHistory),
                 ),
@@ -102,16 +102,21 @@ class _ReferralScreenState extends State<ReferralScreen> {
     );
   }
 
-  Widget _summaryCard() {
-    return const Card(
+  Widget _summaryCard(num earnedMinor) {
+    return Card(
       child: Padding(
-        padding: EdgeInsets.all(18),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Referral Rewards', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-            SizedBox(height: 8),
-            Text('Invite friends and track your referral progress.'),
+            const Text('Referral Rewards', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 10),
+            const Text('• Rs 400 when your friend deposits Rs 600 and bets Rs 6,000 in total.'),
+            const SizedBox(height: 4),
+            const Text('• Rs 5 for every Rs 1,000 your friend deposits, every time.'),
+            const SizedBox(height: 12),
+            Text('You have earned: Rs ${(earnedMinor / 100).toStringAsFixed(0)}',
+                style: const TextStyle(color: Color(0xFFF5C542), fontWeight: FontWeight.w700, fontSize: 16)),
           ],
         ),
       ),
@@ -227,17 +232,76 @@ class ReferralHistoryScreen extends StatelessWidget {
               itemCount: items.length,
               itemBuilder: (_, index) {
                 final item = Map<String, dynamic>.from(items[index] as Map);
-                final date = '${item['createdAt'] ?? item['created_at'] ?? ''}';
-                final reward = (item['rewardMinor'] ?? item['reward_minor']);
-                return ListTile(
-                  leading: const Icon(Icons.person_add_alt_1_outlined),
-                  title: Text('Referral • ${date.length >= 10 ? date.substring(0, 10) : date}'),
-                  subtitle: reward == null ? null : Text('Reward: Rs ${(num.parse('$reward') / 100).toStringAsFixed(2)}'),
-                  trailing: Text('${item['status'] ?? ''}'),
-                );
+                return _FriendTile(item: item);
               },
             );
           },
+        ),
+      ),
+    );
+  }
+}
+
+/// One invited friend: deposits and betting toward the Rs 400 reward, today's
+/// deposits, and what the player has earned from them so far.
+class _FriendTile extends StatelessWidget {
+  final Map<String, dynamic> item;
+  const _FriendTile({required this.item});
+
+  static const _depositNeeded = 60000;
+  static const _bettingNeeded = 600000;
+
+  String _rs(num minor) => 'Rs ${(minor / 100).toStringAsFixed(0)}';
+
+  @override
+  Widget build(BuildContext context) {
+    final deposited = (item['depositedMinor'] as num?) ?? 0;
+    final bet = (item['betMinor'] as num?) ?? 0;
+    final today = (item['depositedTodayMinor'] as num?) ?? 0;
+    final earned = (item['earnedMinor'] as num?) ?? 0;
+    final rewarded = item['status'] == 'rewarded';
+    final date = '${item['createdAt'] ?? ''}';
+
+    Widget bar(String label, num have, num need) => Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('$label: ${_rs(have < need ? have : need)} / ${_rs(need)}', style: const TextStyle(fontSize: 12)),
+              const SizedBox(height: 4),
+              LinearProgressIndicator(value: (have / need).clamp(0.0, 1.0).toDouble(), minHeight: 6, borderRadius: BorderRadius.circular(6)),
+            ],
+          ),
+        );
+
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.person_outline),
+                const SizedBox(width: 8),
+                Expanded(child: Text('${item['phone'] ?? 'Friend'}', style: const TextStyle(fontWeight: FontWeight.w700))),
+                Text(rewarded ? 'Rs 400 earned' : 'In progress',
+                    style: TextStyle(color: rewarded ? const Color(0xFF10B981) : const Color(0xFFF59E0B), fontSize: 12)),
+              ],
+            ),
+            if (date.length >= 10)
+              Text('Joined ${date.substring(0, 10)}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            if (!rewarded) ...[
+              bar('Deposit', deposited, _depositNeeded),
+              bar('Betting', bet, _bettingNeeded),
+            ],
+            const SizedBox(height: 8),
+            Text('Total deposits ${_rs(deposited)} • Today ${_rs(today)} • Betting ${_rs(bet)}',
+                style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            Text('You earned from this friend: ${_rs(earned)}',
+                style: const TextStyle(color: Color(0xFFF5C542), fontSize: 12, fontWeight: FontWeight.w600)),
+          ],
         ),
       ),
     );

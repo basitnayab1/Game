@@ -218,7 +218,6 @@
     <button class="spin-btn" id="spinBtn" onclick="doSpin()">🎰 SPIN (PKR 50)</button>
 
     <div class="faucet-box">
-      <button class="faucet-btn" onclick="claimFaucet()">+ Add PKR 1,000 Test Balance</button>
       <button class="faucet-btn" onclick="refreshToken()">Re-Login / Refresh</button>
     </div>
   </div>
@@ -277,25 +276,6 @@
       document.querySelectorAll('.bet-btn').forEach(b => b.classList.remove('active'));
       event.target.classList.add('active');
       document.getElementById('spinBtn').innerText = `🎰 SPIN (PKR ${pkr})`;
-    }
-
-    async function claimFaucet() {
-      await ensureToken();
-      try {
-        const res = await fetch('/api/v1/games/play/faucet', {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const json = await res.json();
-        if (json.ok) {
-          document.getElementById('banner').innerHTML = `<span class="win-text">🎉 Added +PKR 1,000 Test Credits to Ledger!</span>`;
-          loadBalance();
-        } else {
-          alert('Faucet unavailable: ' + (json.error?.message || 'Demo faucet disabled.'));
-        }
-      } catch (e) {
-        alert('Demo faucet is not available.');
-      }
     }
 
     async function refreshToken() {

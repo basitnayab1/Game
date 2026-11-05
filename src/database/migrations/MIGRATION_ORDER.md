@@ -43,3 +43,4 @@ Migration filenames are unique and sequential (001 to 034) before first producti
 039 in-house games (N5 Originals provider with Aviator and N5 Slots in the catalog)
 040 password reset (admin-issued temporary password; player must set a new one)
 041 VIP targets and salary (deposit/betting required per level, daily salary claims)
+042 referral rewards (Rs 400 qualification reward and 0.5% deposit commission to the inviter)

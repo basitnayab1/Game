@@ -11,10 +11,7 @@ import {
   calculateMultiplierAtElapsed,
   recoverDanglingCrashRounds,
 } from '../src/modules/games/crash-game.controller.js';
-import {
-  spinGameController,
-  claimTestBalanceController,
-} from '../src/modules/games/game-play.controller.js';
+import { spinGameController } from '../src/modules/games/game-play.controller.js';
 
 const TEST_DB_URL = process.env.TEST_DATABASE_URL || 'postgresql://postgres:testSecret123@localhost:54328/n5_idempotency_test';
 
@@ -106,26 +103,7 @@ describe('Crash Game & Game Controller Safety Suite', () => {
   // --------------------------------------------------------------------------
   // SECTION 2: Demo Faucet & Account Restriction Unit Safety
   // --------------------------------------------------------------------------
-  describe('Demo Faucet & Account Restriction Safety', () => {
-    it('strictly forbids demo faucet in production environment', async () => {
-      const oldEnv = process.env.NODE_ENV;
-      try {
-        process.env.NODE_ENV = 'production';
-        const req: any = {
-          auth: { userId: 'any-user' },
-          app: { locals: {} },
-        };
-        const res = createMockResponse();
-        await claimTestBalanceController(req as Request, res as Response);
-
-        expect(res.statusCode).toBe(403);
-        expect(res.body?.ok).toBe(false);
-        expect(res.body?.error?.code).toBe('DEMO_FAUCET_DISABLED');
-      } finally {
-        process.env.NODE_ENV = oldEnv;
-      }
-    });
-
+  describe('Account Restriction Safety', () => {
     it('rejects invalid bet amounts (below minimum, above maximum, negative, non-integer)', async () => {
       const invalidBets = [0, -500, 999, 500001, NaN, 'abc', 100.5];
 

@@ -1,3 +1,4 @@
+import { settleReferralQualification } from '../referral/referral-rewards.js';
 import { syncVipLevel } from '../vip_referral/vip.service.js';
 import type { Request, Response } from 'express';
 import type { DatabaseClient } from '../../core/database/database.types.js';
@@ -28,6 +29,8 @@ export async function getMyWallet(req: Request, res: Response) {
 
     // Bring the VIP level up to date (pays any level-up bonus) before reading the balance.
     await syncVipLevel(db, userId).catch((e) => console.error('[VIP:SYNC]', e instanceof Error ? e.message : e));
+    // Pays whoever invited this player once they have deposited and bet enough.
+    await settleReferralQualification(db, userId).catch((e) => console.error('[REFERRAL:SETTLE]', e instanceof Error ? e.message : e));
 
     const row = (await db.query<{
       id: string;

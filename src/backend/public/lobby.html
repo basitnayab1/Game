@@ -806,7 +806,6 @@
         <p class="hero-desc">Experience Zeus' thunder with 5,000x multipliers! Server-authoritative fair spins powered by N5 Game Engine.</p>
         <div class="hero-actions">
           <button class="btn btn-login" onclick="launchGameById('e2e6fbb2-3d3b-4f4a-82d7-ae61195641f1', 'Gates of Olympus')">🎰 PLAY NOW</button>
-          <button class="btn btn-withdraw" onclick="claimTestFaucet()">Claim +PKR 1,000 Credits</button>
         </div>
       </div>
     </section>
@@ -877,7 +876,6 @@
           <input type="text" class="form-input" id="depositTrx" placeholder="e.g. 98124892482">
         </div>
         <button class="btn btn-deposit" style="width:100%; justify-content:center; padding:12px;" onclick="submitDeposit()">Submit Deposit Request</button>
-        <button class="btn" style="width:100%; justify-content:center; margin-top:8px; background:#1e293b;" onclick="claimTestFaucet()">Or Instant +PKR 1,000 Test Credit</button>
       </div>
 
       <!-- Withdraw View -->
@@ -1282,28 +1280,6 @@
       document.getElementById('gameModal').classList.remove('active');
       document.getElementById('gameFrame').src = 'about:blank';
       fetchWallet(); // Refresh balance when closing game
-    }
-
-    async function claimTestFaucet() {
-      if (!token) {
-        await ensureLoginState();
-        if (!token) { openAuthModal(); return; }
-      }
-      try {
-        const res = await apiFetch('/api/v1/games/play/faucet', {
-          method: 'POST'
-        });
-        const json = await res.json();
-        if (json.ok) {
-          alert('🎉 +PKR 1,000 Test Credits successfully credited to your wallet!');
-          fetchWallet();
-          closeModal('cashierModal');
-        } else {
-          alert('Faucet error: ' + (json.error?.message || 'Could not claim'));
-        }
-      } catch (err) {
-        alert('Network error claiming faucet');
-      }
     }
 
     function openCashierModal(tab) {

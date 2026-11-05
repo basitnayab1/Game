@@ -18,7 +18,6 @@ import {
 } from '../modules/games/crash-game.controller.js';
 import {
   spinGameController,
-  claimTestBalanceController,
 } from '../modules/games/game-play.controller.js';
 import { getPromotions, activatePromotion, openPromotion, getCycles, openCycle } from '../modules/rewards/rewards.controller.js';
 import { getVip, getVipLevel, getVipHistory, getVipProgress, postVipSalaryClaim } from '../modules/vip_referral/vip.controller.js';
@@ -136,10 +135,6 @@ export function createApiRouter() {
   router.get('/app/support', getSupportContact);
   router.post('/games/play/spin', requireAuth, spinGameController);
   router.post('/games/spin', requireAuth, spinGameController);
-  if (process.env.NODE_ENV !== 'production') {
-    router.post('/games/play/faucet', requireAuth, claimTestBalanceController);
-    router.post('/games/faucet', requireAuth, claimTestBalanceController);
-  }
 
   router.use((_req, res) => {
     res.status(404).json({

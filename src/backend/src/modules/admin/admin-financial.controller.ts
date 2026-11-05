@@ -1,3 +1,4 @@
+import { payDepositCommission } from '../referral/referral-rewards.js';
 import { notifyUser, rupees, withdrawalNetMinor } from '../notifications/notify.js';
 import type { Request, Response } from 'express';
 import type { DatabaseClient } from '../../core/database/database.types.js';
@@ -156,6 +157,7 @@ export async function approveDeposit(req: Request, res: Response) {
       );
       await notifyUser(tx, txRow.user_id, 'TRANSACTION', 'Deposit received',
         `Rs ${rupees(amountMinor)} has been added to your wallet.`);
+      await payDepositCommission(tx, txRow.user_id, txRow.id, amountMinor);
 
       return {
         transactionId: txRow.id,
