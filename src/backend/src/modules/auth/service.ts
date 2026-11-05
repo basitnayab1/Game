@@ -214,8 +214,8 @@ export async function adminResetPassword(adminUserId: string, userId: string, db
 export async function refresh(refreshToken: string, db: DatabaseClient) {
   const claims = verifyRefresh(refreshToken);
   return db.transaction(async (tx) => {
-    const s = (await tx.query<{ user_id: string; refresh_token_hash: string; revoked_at: string | null; expired: boolean }>(
-      `SELECT user_id, refresh_token_hash, revoked_at, (expires_at <= now()) AS expired
+    const s = (await tx.query<{ user_id: string; refresh_token_hash: string; revoked_at: string | null; expired: boolean; admin_2fa_at: string | null }>(
+      `SELECT user_id, refresh_token_hash, revoked_at, (expires_at <= now()) AS expired, admin_2fa_at
          FROM user_sessions WHERE id = $1 FOR UPDATE`,
       [claims.sid],
     )).rows[0];
@@ -227,7 +227,8 @@ export async function refresh(refreshToken: string, db: DatabaseClient) {
 
     // Rotation: the old refresh token is revoked in the same transaction that issues the new one.
     await tx.query('UPDATE user_sessions SET revoked_at = now() WHERE id = $1', [claims.sid]);
-    return createSession(claims.sub, tx);
+    // A session that passed admin 2FA stays verified after rotation.
+    return createSession(claims.sub, tx, s.admin_2fa_at);
   });
 }
 
@@ -235,15 +236,15 @@ export async function logout(sessionId: string, db: DatabaseClient) {
   await db.query('UPDATE user_sessions SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL', [sessionId]);
 }
 
-export async function createSession(userId: string, db: DatabaseClient) {
+export async function createSession(userId: string, db: DatabaseClient, admin2faAt: string | null = null) {
   const sid = crypto.randomUUID();
   const access = signAccessToken(userId, sid);
   const refreshToken = signRefreshToken(userId, sid);
 
   await db.query(
-    `INSERT INTO user_sessions (id, user_id, refresh_token_hash, expires_at, created_at)
-     VALUES ($1, $2, $3, now() + ($4::text || ' days')::interval, now())`,
-    [sid, userId, hashToken(refreshToken), String(env.REFRESH_TOKEN_DAYS)],
+    `INSERT INTO user_sessions (id, user_id, refresh_token_hash, expires_at, created_at, admin_2fa_at)
+     VALUES ($1, $2, $3, now() + ($4::text || ' days')::interval, now(), $5)`,
+    [sid, userId, hashToken(refreshToken), String(env.REFRESH_TOKEN_DAYS), admin2faAt],
   );
   const user = (await db.query<{ status: string; must_change_password: boolean }>(
     'SELECT status, must_change_password FROM users WHERE id = $1', [userId])).rows[0];

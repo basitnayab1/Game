@@ -1,6 +1,6 @@
 import { payDepositCommission } from '../referral/referral-rewards.js';
 import { notifyUser, rupees } from '../notifications/notify.js';
-import { MIN_DEPOSIT_MINOR, withdrawalFeeMinor, withdrawalLimitError } from './withdrawal-fee.js';
+import { DAILY_WITHDRAWAL_LIMIT_MINOR, MAX_DEPOSIT_MINOR, MIN_DEPOSIT_MINOR, withdrawalFeeMinor, withdrawalLimitError } from './withdrawal-fee.js';
 import { checkDepositAllowed } from '../responsibleGaming/enforcement.js';
 import type { Request, Response } from 'express';
 import type { DatabaseClient } from '../../core/database/database.types.js';
@@ -42,9 +42,23 @@ export async function requestDeposit(req: Request, res: Response) {
     }
   }
 
+  // Shown to staff in the admin panel, so only plain values are accepted.
+  if (!/^[a-z_]{2,20}$/i.test(String(gateway))) {
+    return res.status(400).json({ ok: false, error: { code: 'INVALID_GATEWAY', message: 'Unknown payment method.' } });
+  }
+  if (cleanTrx && !/^[A-Za-z0-9_-]{4,40}$/.test(cleanTrx)) {
+    return res.status(400).json({ ok: false, error: { code: 'INVALID_TRX_FORMAT', message: 'Transaction ID may contain letters and numbers only.' } });
+  }
+  if (senderPhone && !/^\+?\d{10,15}$/.test(String(senderPhone).replace(/[\s-]/g, ''))) {
+    return res.status(400).json({ ok: false, error: { code: 'INVALID_SENDER_PHONE', message: 'Enter a valid sender mobile number.' } });
+  }
+
   const amountMinor = Math.round(amount * 100);
-  if (amountMinor < MIN_DEPOSIT_MINOR) {
-    return res.status(400).json({ ok: false, error: { code: 'BELOW_MIN_DEPOSIT', message: `Minimum deposit is Rs ${MIN_DEPOSIT_MINOR / 100}.` } });
+  if (amountMinor < MIN_DEPOSIT_MINOR || amountMinor > MAX_DEPOSIT_MINOR) {
+    return res.status(400).json({ ok: false, error: {
+      code: amountMinor < MIN_DEPOSIT_MINOR ? 'BELOW_MIN_DEPOSIT' : 'ABOVE_MAX_DEPOSIT',
+      message: `Limit ${MIN_DEPOSIT_MINOR / 100} - ${MAX_DEPOSIT_MINOR / 100} per deposit.`,
+    } });
   }
 
   const rgBlock = await checkDepositAllowed(db, userId, amountMinor);
@@ -285,9 +299,20 @@ export async function requestWithdrawal(req: Request, res: Response) {
     return res.status(400).json({ ok: false, error: { code: 'INVALID_AMOUNT', message: 'Valid withdrawal amount is required.' } });
   }
 
-  const cleanPhone = String(accountPhone || '').trim();
+  const cleanPhone = String(accountPhone || '').replace(/[\s-]/g, '');
   if (!cleanPhone) {
     return res.status(400).json({ ok: false, error: { code: 'ACCOUNT_PHONE_REQUIRED', message: 'Mobile wallet phone number is required.' } });
+  }
+  // These are shown to staff in the admin panel, so only plain values are accepted.
+  if (!/^\+?\d{10,15}$/.test(cleanPhone)) {
+    return res.status(400).json({ ok: false, error: { code: 'INVALID_ACCOUNT_PHONE', message: 'Enter a valid mobile wallet number.' } });
+  }
+  const cleanTitle = String(accountTitle || '').trim().replace(/\s+/g, ' ');
+  if (cleanTitle && !/^[\p{L}][\p{L} .'-]{0,59}$/u.test(cleanTitle)) {
+    return res.status(400).json({ ok: false, error: { code: 'INVALID_ACCOUNT_TITLE', message: 'Account title may contain letters and spaces only.' } });
+  }
+  if (!/^[a-z_]{2,20}$/i.test(String(gateway))) {
+    return res.status(400).json({ ok: false, error: { code: 'INVALID_GATEWAY', message: 'Unknown payment method.' } });
   }
 
   const amountMinor = Math.round(amount * 100);
@@ -304,7 +329,7 @@ export async function requestWithdrawal(req: Request, res: Response) {
     amount: amountMinor,
     gateway: gateway.toLowerCase(),
     accountPhone: cleanPhone,
-    accountTitle: accountTitle ? String(accountTitle).trim().toLowerCase() : null,
+    accountTitle: cleanTitle ? cleanTitle.toLowerCase() : null,
     currency,
   });
 
@@ -369,6 +394,19 @@ export async function requestWithdrawal(req: Request, res: Response) {
         throw new Error(`Insufficient balance. Available: PKR ${(Number(available) / 100).toFixed(2)}, Requested: PKR ${amount}`);
       }
 
+      // Daily total (Pakistan day). The wallet row lock above serializes requests.
+      const todayMinor = Number((await tx.query<{ total: string }>(
+        `SELECT COALESCE(SUM(amount_minor), 0) AS total FROM transactions
+          WHERE user_id = $1 AND type = 'withdrawal'
+            AND status NOT IN ('rejected', 'failed', 'cancelled')
+            AND created_at >= date_trunc('day', now() AT TIME ZONE 'Asia/Karachi') AT TIME ZONE 'Asia/Karachi'`,
+        [userId]
+      )).rows[0]?.total ?? 0);
+      if (todayMinor + amountMinor > DAILY_WITHDRAWAL_LIMIT_MINOR) {
+        const leftRs = Math.max(0, DAILY_WITHDRAWAL_LIMIT_MINOR - todayMinor) / 100;
+        throw { statusCode: 400, code: 'DAILY_WITHDRAWAL_LIMIT', message: `Daily withdrawal limit is Rs ${(DAILY_WITHDRAWAL_LIMIT_MINOR / 100).toLocaleString('en-US')}. You can withdraw Rs ${leftRs.toLocaleString('en-US')} more today.` };
+      }
+
       await tx.query(
         `UPDATE wallet_accounts
             SET available_minor = available_minor - $1,
@@ -391,7 +429,7 @@ export async function requestWithdrawal(req: Request, res: Response) {
           walletRow.id,
           amountMinor,
           idempotencyKey,
-          JSON.stringify({ gateway, accountPhone: cleanPhone, accountTitle: accountTitle || null }),
+          JSON.stringify({ gateway, accountPhone: cleanPhone, accountTitle: cleanTitle || null }),
         ]
       );
 
@@ -446,6 +484,10 @@ export async function requestWithdrawal(req: Request, res: Response) {
         ok: false,
         error: { code: 'ACCOUNT_RESTRICTED', message: error.message || 'Account is restricted from making withdrawals.' },
       });
+    }
+
+    if (error?.code === 'DAILY_WITHDRAWAL_LIMIT') {
+      return res.status(400).json({ ok: false, error: { code: error.code, message: error.message } });
     }
 
     const isInsufficientBalance = error?.message?.includes('Insufficient balance');

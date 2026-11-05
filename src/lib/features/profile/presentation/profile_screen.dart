@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -101,7 +102,47 @@ class ProfileScreen extends StatelessWidget {
   }
 }
 
-class _ProfileHeader extends StatelessWidget {
+/// Name (or phone until a name is set), player ID, and the edit-name button.
+class _ProfileHeader extends StatefulWidget {
+  @override
+  State<_ProfileHeader> createState() => _ProfileHeaderState();
+}
+
+class _ProfileHeaderState extends State<_ProfileHeader> {
+  final _client = PlayerApiClient(PlayerApiClientConfig.fromEnvironment());
+  late Future<Map<String, dynamic>> _me = AuthRepository(_client).me();
+
+  Future<void> _editName(String current) async {
+    final controller = TextEditingController(text: current);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Your name'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 24,
+          decoration: const InputDecoration(hintText: '3-24 letters or numbers'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Save')),
+        ],
+      ),
+    );
+    if (name == null || name.isEmpty || !mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _client.patch('/users/me', data: {'displayName': name});
+      setState(() => _me = AuthRepository(_client).me());
+      messenger.showSnackBar(const SnackBar(content: Text('Name updated.')));
+    } on DioException catch (e) {
+      final body = e.response?.data;
+      final err = body is Map ? body['error'] : null;
+      messenger.showSnackBar(SnackBar(content: Text(err is Map ? '${err['message'] ?? err['code']}' : 'Could not update the name.')));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -111,38 +152,48 @@ class _ProfileHeader extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: const Color(0xFF293244)),
       ),
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 32,
-            backgroundColor: Color(0xFF242C3B),
-            child: Icon(Icons.person_rounded, size: 34, color: Color(0xFF8B7CFF)),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: FutureBuilder<Map<String, dynamic>>(
-              future: AuthRepository(PlayerApiClient(PlayerApiClientConfig.fromEnvironment())).me(),
-              builder: (context, snap) {
-                final me = snap.data;
-                final id = (me?['id'] as String?) ?? '';
-                return Column(
+      child: FutureBuilder<Map<String, dynamic>>(
+        future: _me,
+        builder: (context, snap) {
+          final me = snap.data;
+          final id = (me?['id'] as String?) ?? '';
+          final name = me?['displayName'] as String?;
+          final phone = (me?['phone'] as String?) ?? '';
+          return Row(
+            children: [
+              const CircleAvatar(
+                radius: 32,
+                backgroundColor: Color(0xFF242C3B),
+                child: Icon(Icons.person_rounded, size: 34, color: Color(0xFF8B7CFF)),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      (me?['phone'] as String?) ?? 'N5 Player',
+                      name ?? (phone.isEmpty ? 'N5 Player' : phone),
                       style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800),
                     ),
+                    if (name != null && phone.isNotEmpty)
+                      Text(phone, style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 12)),
                     const SizedBox(height: 5),
                     Text(
                       id.isEmpty ? 'Loading...' : 'Player ID: N5-${id.substring(0, 8).toUpperCase()}',
                       style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 12),
                     ),
                   ],
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+              ),
+              if (me != null)
+                IconButton(
+                  tooltip: 'Edit name',
+                  icon: const Icon(Icons.edit_outlined, color: Color(0xFFF5C542)),
+                  onPressed: () => _editName(name ?? ''),
+                ),
+            ],
+          );
+        },
       ),
     );
   }

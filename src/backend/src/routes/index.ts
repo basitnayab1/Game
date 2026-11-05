@@ -38,6 +38,7 @@ import { createCashierRouter } from '../modules/payments/cashier.routes.js';
 import { getWheelStatus, spinLuckyWheel } from '../modules/rewards/lucky-wheel.controller.js';
 import { getLatestAndroidRelease, getSupportContact } from '../modules/app-release/app-release.controller.js';
 import { createAdminFinancialRouter } from '../modules/admin/admin-financial.routes.js';
+import { createAdminTeamRouter } from '../modules/admin/admin-team.routes.js';
 
 /**
  * Canonical API router. Only endpoints with an implemented/authenticated
@@ -115,6 +116,7 @@ export function createApiRouter() {
   // Modular Cashier & Admin Financial Management
   router.use('/payments', createCashierRouter());
   router.use('/admin', createAdminFinancialRouter());
+  router.use('/admin', createAdminTeamRouter());
 
   router.get('/games/catalog', requireAuth, getGameCatalogController);
   router.get('/games/favorites', requireAuth, listFavorites);

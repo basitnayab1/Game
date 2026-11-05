@@ -51,3 +51,4 @@ src/android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
 Thumbs.db
 *.log
 npm-debug.log*
+tools/release-notes.log

@@ -15,6 +15,10 @@
 export const MIN_WITHDRAWAL_MINOR = 500 * 100;
 export const MAX_WITHDRAWAL_MINOR = 100_000 * 100;
 export const MIN_DEPOSIT_MINOR = 100 * 100;
+/** Per deposit; there is no daily or monthly deposit limit. */
+export const MAX_DEPOSIT_MINOR = 50_000 * 100;
+/** Total withdrawals per player per day (Pakistan time); no monthly limit. */
+export const DAILY_WITHDRAWAL_LIMIT_MINOR = 300_000 * 100;
 
 const TIERS: Array<{ fromMinor: number; perThousand: number }> = [
   { fromMinor: 100_000 * 100, perThousand: 90 },

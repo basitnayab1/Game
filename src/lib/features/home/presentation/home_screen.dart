@@ -119,13 +119,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           ],
         ),
         actions: [
-          // Account currency: fixed by the account's country, shown only.
-          ValueListenableBuilder<CountryConfig>(
-            valueListenable: CountryService.countryNotifier,
-            builder: (context, country, _) =>
-                _headerChip(country.currencyCode, const Color(0xFFF5C542)),
-          ),
-
           IconButton(
               onPressed: () => context.push(AppRoutes.notifications),
               icon: const Icon(Icons.notifications_none_rounded)),
@@ -242,19 +235,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ),
     ));
   }
-
-  Widget _headerChip(String text, Color color) => Container(
-        margin: const EdgeInsets.symmetric(vertical: 10, horizontal: 3),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1E2838),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF2E3E58)),
-        ),
-        child: Text(text,
-            style: TextStyle(
-                color: color, fontSize: 11, fontWeight: FontWeight.w800)),
-      );
 
   Widget _welcomeCard(BuildContext context) => Container(
         constraints: const BoxConstraints(minHeight: 110),

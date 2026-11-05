@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Builds the Android app and publishes it as an in-app update.
 #
-#   tools/publish-apk.sh --notes "What changed" [--version 1.0.1] [--mandatory]
+#   tools/publish-apk.sh [--notes "What changed"] [--version 1.0.1] [--mandatory]
+#
+# Players only ever see a generic "security fixes" message in the update
+# prompt. --notes is kept locally in tools/release-notes.log, never published.
 #
 # Steps: bump the build number in src/pubspec.yaml, build the release APK,
 # upload it to the server's downloads/ folder, then write downloads/version.json
@@ -14,6 +17,7 @@ REMOTE_DIR="/opt/n5/downloads"
 API_URL="https://api.n5gamez.com/api/v1"
 
 notes=""
+PUBLIC_NOTES="Security fixes and performance improvements. Please update to continue safely."
 version_name=""
 mandatory=false
 while [[ $# -gt 0 ]]; do
@@ -41,7 +45,7 @@ flutter build apk --release --target-platform android-arm,android-arm64 --dart-d
 apk="build/app/outputs/flutter-apk/app-release.apk"
 sha=$(sha256sum "$apk" | cut -d' ' -f1)
 
-release_json=$(VERSION_CODE="$code" VERSION_NAME="$name" SHA="$sha" MANDATORY="$mandatory" NOTES="$notes" node -e '
+release_json=$(VERSION_CODE="$code" VERSION_NAME="$name" SHA="$sha" MANDATORY="$mandatory" NOTES="$PUBLIC_NOTES" node -e '
   const e = process.env;
   process.stdout.write(JSON.stringify({
     versionCode: Number(e.VERSION_CODE), versionName: e.VERSION_NAME, sha256: e.SHA,
@@ -56,5 +60,7 @@ printf '%s\n' "$release_json" | ssh "$SERVER" "cat > $REMOTE_DIR/version.json.ne
 ssh "$SERVER" "cd $REMOTE_DIR && mv N5-Game.apk.new N5-Game.apk && mv version.json.new version.json"
 
 cp "$apk" ../N5_Game.apk
+printf '%s	%s (%s)	%s
+' "$(date +%F)" "$name" "$code" "$notes" >> ../tools/release-notes.log
 echo "Published ${name} (${code}), sha256 ${sha}"
 curl -fsS "$API_URL/app/android/latest"; echo

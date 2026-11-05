@@ -90,7 +90,7 @@ class _DepositScreenState extends State<DepositScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              'Minimum deposit for ${country.name} is ${country.currencySymbol}${country.minDeposit.toStringAsFixed(0)}.'),
+              'Limit ${country.minDeposit.toStringAsFixed(0)} - ${country.maxDeposit.toStringAsFixed(0)} per deposit.'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -100,7 +100,7 @@ class _DepositScreenState extends State<DepositScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              'Maximum deposit is ${country.currencySymbol}${country.maxDeposit.toStringAsFixed(0)}.'),
+              'Limit ${country.minDeposit.toStringAsFixed(0)} - ${country.maxDeposit.toStringAsFixed(0)} per deposit.'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -297,16 +297,25 @@ class _DepositScreenState extends State<DepositScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.w700),
                     ),
-                    Text(
-                      '${context.tr('min_deposit', defaultText: 'Min')} ${country.currencySymbol}${country.minDeposit.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                          color: Color(0xFF94A3B8), fontSize: 12),
-                    ),
+                    Builder(builder: (context) {
+                      // Turns red as soon as the typed amount is outside the per-deposit limit.
+                      final typed = double.tryParse(_amountController.text.trim());
+                      final outside = typed != null &&
+                          (typed > country.maxDeposit || typed < country.minDeposit);
+                      return Text(
+                        'Limit ${country.minDeposit.toStringAsFixed(0)} - ${country.maxDeposit.toStringAsFixed(0)}',
+                        style: TextStyle(
+                            color: outside ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
+                            fontSize: 12,
+                            fontWeight: outside ? FontWeight.w700 : FontWeight.normal),
+                      );
+                    }),
                   ],
                 ),
                 const SizedBox(height: 10),
                 TextField(
                   controller: _amountController,
+                  onChanged: (_) => setState(() {}),
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   style: const TextStyle(

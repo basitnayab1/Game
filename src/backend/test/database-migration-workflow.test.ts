@@ -22,7 +22,7 @@ describe('Database Migration Engine & Workflow', () => {
     const files = getMigrationFiles(MIGRATIONS_DIR);
     expect(files.length).toBeGreaterThanOrEqual(36);
     expect(files[0].name).toBe('001_initial_foundation.sql');
-    expect(files[files.length - 1].name).toBe('042_referral_rewards.sql');
+    expect(files[files.length - 1].name).toBe('043_admin_team_2fa.sql');
 
     // Numbers must be contiguous 1..N
     const numbers = files.map((f) => f.number);

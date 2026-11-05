@@ -55,6 +55,8 @@ services:
       AUTO_MIGRATE: "true"
       MIGRATIONS_DIR: "/app/database/migrations"
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET environment variable is required}
+      # Encrypts admin 2FA secrets; falls back to JWT_ACCESS_SECRET when unset.
+      ADMIN_TOTP_KEY: ${ADMIN_TOTP_KEY:-}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET environment variable is required}
       CORS_ORIGIN: ${CORS_ORIGIN:-https://n5game.com,https://admin.n5game.com}
       API_PREFIX: /api/v1

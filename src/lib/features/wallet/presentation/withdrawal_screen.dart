@@ -92,7 +92,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              'Minimum withdrawal for ${country.name} is ${country.currencySymbol}${country.minWithdrawal.toStringAsFixed(0)}.'),
+              'Limit ${country.minWithdrawal.toStringAsFixed(0)} - ${country.maxWithdrawal.toStringAsFixed(0)} per withdrawal.'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -114,7 +114,7 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-              'Maximum withdrawal is ${country.currencySymbol}${country.maxWithdrawal.toStringAsFixed(0)}.'),
+              'Limit ${country.minWithdrawal.toStringAsFixed(0)} - ${country.maxWithdrawal.toStringAsFixed(0)} per withdrawal.'),
           backgroundColor: const Color(0xFFEF4444),
         ),
       );
@@ -291,14 +291,29 @@ class _WithdrawalScreenState extends State<WithdrawalScreen> {
                           fontSize: 16,
                           fontWeight: FontWeight.w700),
                     ),
-                    Text(
-                      'Min ${country.currencySymbol}${country.minWithdrawal.toStringAsFixed(0)}'
-                      '${_available == null ? '' : '  •  Available Rs ${_available!.toStringAsFixed(_available! == _available!.truncateToDouble() ? 0 : 2)}'}',
-                      style: const TextStyle(
-                          color: Color(0xFF94A3B8), fontSize: 12),
-                    ),
+                    if (_available != null)
+                      Text(
+                        'Available Rs ${_available!.toStringAsFixed(_available! == _available!.truncateToDouble() ? 0 : 2)}',
+                        style: const TextStyle(
+                            color: Color(0xFF94A3B8), fontSize: 12),
+                      ),
                   ],
                 ),
+                const SizedBox(height: 4),
+                Builder(builder: (context) {
+                  // Per withdrawal 500 - 100,000; at most 300,000 a day.
+                  final typed = double.tryParse(_amountController.text.trim());
+                  final outside = typed != null &&
+                      (typed < country.minWithdrawal || typed > country.maxWithdrawal);
+                  return Text(
+                    'Limit ${country.minWithdrawal.toStringAsFixed(0)} - ${country.maxWithdrawal.toStringAsFixed(0)}  •  Daily 300000',
+                    style: TextStyle(
+                      color: outside ? const Color(0xFFEF4444) : const Color(0xFF94A3B8),
+                      fontSize: 12,
+                      fontWeight: outside ? FontWeight.w700 : FontWeight.w400,
+                    ),
+                  );
+                }),
                 const SizedBox(height: 10),
                 TextField(
                   controller: _amountController,

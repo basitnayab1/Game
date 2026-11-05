@@ -37,9 +37,25 @@ class BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            context.tr('available_balance', defaultText: 'Available Balance'),
-            style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 13),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                context.tr('available_balance', defaultText: 'Available Balance'),
+                style: const TextStyle(color: Color(0xFFA8B0C0), fontSize: 13),
+              ),
+              // The wallet's currency, shown with the balance it belongs to.
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E2838),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF2E3E58)),
+                ),
+                child: Text(currency,
+                    style: const TextStyle(color: Color(0xFFF5C542), fontSize: 11, fontWeight: FontWeight.w800)),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
           Text(
