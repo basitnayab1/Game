@@ -77,6 +77,10 @@ class _DepositScreenState extends State<DepositScreen> {
     }
   }
 
+  /// True when the admin panel has not set an account for this method.
+  bool _noAccount(PaymentMethodConfig m) =>
+      (m.defaultDepositAddress ?? '').trim().isEmpty;
+
   @override
   void dispose() {
     _amountController.dispose();
@@ -110,6 +114,16 @@ class _DepositScreenState extends State<DepositScreen> {
     if (_selectedMethod == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select a payment method.')),
+      );
+      return;
+    }
+    // Never let a player send money without an account from the admin panel.
+    if (_noAccount(_selectedMethod!)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Deposit account is not available right now. Please contact support.'),
+          backgroundColor: Color(0xFFEF4444),
+        ),
       );
       return;
     }
@@ -560,7 +574,7 @@ class _DepositScreenState extends State<DepositScreen> {
                       ),
                     ),
                     const SizedBox(height: 14),
-                  ] else if (_selectedMethod!.instructions != null) ...[
+                  ] else ...[
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -576,7 +590,9 @@ class _DepositScreenState extends State<DepositScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              _selectedMethod!.instructions!,
+                              _isLoadingMethods
+                                  ? 'Loading deposit account...'
+                                  : 'Deposit account is not available right now. Please contact support.',
                               style: const TextStyle(
                                   color: Color(0xFFA8B0C0), fontSize: 12),
                             ),

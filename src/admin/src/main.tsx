@@ -88,7 +88,7 @@ function App() {
 
   const [tab, setTab] = useState<'overview' | 'users' | 'kyc' | 'whatsapp' | 'support' | 'games' | 'providers' | 'promotions' | 'rewards' | 'vip' | 'config' | 'deposits' | 'withdrawals'>('overview');
   const [waStatus, setWaStatus] = useState<WhatsAppStatus | null>(null);
-  const [testPhone, setTestPhone] = useState('+923076975507');
+  const [testPhone, setTestPhone] = useState('');
   const [testResult, setTestResult] = useState('');
   const [providers, setProviders] = useState<Provider[]>([]);
   const [games, setGames] = useState<Game[]>([]);
@@ -596,7 +596,7 @@ function App() {
             <div className="stats" style={{ marginBottom: '20px' }}>
               <div className="stat">
                 <small>WhatsApp Number</small>
-                <strong style={{ fontSize: '17px', color: '#38bdf8' }}>{waStatus?.senderNumber || '+923076975507'}</strong>
+                <strong style={{ fontSize: '17px', color: '#38bdf8' }}>{waStatus?.senderNumber || 'Not configured'}</strong>
               </div>
               <div className="stat">
                 <small>SMS Masking (PTA)</small>

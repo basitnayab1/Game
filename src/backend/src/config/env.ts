@@ -23,7 +23,7 @@ const schema = z.object({
   WHATSAPP_GATEWAY_API_KEY: z.string().optional(),
   // Shared secret the WhatsApp gateway must send (x-webhook-secret) when forwarding inbound messages.
   WHATSAPP_INBOUND_SECRET: z.string().optional(),
-  WHATSAPP_SENDER_NUMBER: z.string().default('+923076975507'),
+  WHATSAPP_SENDER_NUMBER: z.string().default(''),
   // Support WhatsApp number shown to players (e.g. for password resets); hidden when unset.
   SUPPORT_WHATSAPP: z.string().optional(),
   SMS_PROVIDER: z.string().default('console'),

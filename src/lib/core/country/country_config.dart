@@ -29,6 +29,17 @@ class PaymentMethodConfig {
     this.instructions,
   });
 
+  /// Gateway name for an account the admin added, from its display name.
+  static String gatewayIdFor(String name, String category) {
+    final n = name.toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+    if (n.contains('easypaisa')) return 'easypaisa';
+    if (n.contains('jazz')) return 'jazzcash';
+    if (n.contains('nayapay') || n.contains('sadapay')) return 'nayapay_sadapay';
+    if (category == 'bank') return 'bank_transfer';
+    final slug = n.length > 20 ? n.substring(0, 20) : n;
+    return slug.length >= 2 ? slug : 'wallet';
+  }
+
   factory PaymentMethodConfig.fromJson(Map<String, dynamic> json) {
     final catStr = (json['category'] as String? ?? 'wallet').toLowerCase();
     PaymentCategory cat = PaymentCategory.wallet;
@@ -51,7 +62,9 @@ class PaymentMethodConfig {
     }
 
     return PaymentMethodConfig(
-      id: json['id']?.toString() ?? json['name']?.toString() ?? 'custom',
+      // The server expects a gateway name (easypaisa, jazzcash, ...), not the
+      // admin row's id.
+      id: gatewayIdFor(json['name']?.toString() ?? '', catStr),
       name: json['name']?.toString() ?? 'Payment Method',
       category: cat,
       icon: icon,
@@ -478,7 +491,7 @@ class CountryConfig {
           badgeText: 'Instant',
           accountFieldLabel: 'Easypaisa Account Number',
           accountFieldHint: '03001234567',
-          instructions: 'Send payment to Easypaisa Account: 03076975507. Enter your Sender Number & TrxID.',
+          instructions: 'Send payment to the Easypaisa account shown above, then enter your TrxID.',
         ),
         PaymentMethodConfig(
           id: 'jazzcash',
@@ -488,7 +501,7 @@ class CountryConfig {
           badgeText: 'Instant',
           accountFieldLabel: 'JazzCash Account Number',
           accountFieldHint: '03001234567',
-          instructions: 'Send payment to JazzCash Account: 03076975507. Enter your Sender Number & TID.',
+          instructions: 'Send payment to the JazzCash account shown above, then enter your TID.',
         ),
         PaymentMethodConfig(
           id: 'nayapay_sadapay',

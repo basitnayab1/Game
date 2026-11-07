@@ -20,7 +20,7 @@ export async function requestDeposit(req: Request, res: Response) {
   }
   if (!db) return paymentsStoreUnavailable(res);
 
-  const { amountPkr, amount: rawAmount, gateway = 'easypaisa', trxId, senderPhone, note, cnicLast6, currency = 'PKR', mode: rawMode } = req.body || {};
+  const { amountPkr, amount: rawAmount, gateway = 'easypaisa', trxId, senderPhone: rawSenderPhone, note, cnicLast6, currency = 'PKR', mode: rawMode } = req.body || {};
   const amount = Number(amountPkr !== undefined ? amountPkr : rawAmount);
 
   if (!amount || isNaN(amount) || amount <= 0) {
@@ -49,9 +49,9 @@ export async function requestDeposit(req: Request, res: Response) {
   if (cleanTrx && !/^[A-Za-z0-9_-]{4,40}$/.test(cleanTrx)) {
     return res.status(400).json({ ok: false, error: { code: 'INVALID_TRX_FORMAT', message: 'Transaction ID may contain letters and numbers only.' } });
   }
-  if (senderPhone && !/^\+?\d{10,15}$/.test(String(senderPhone).replace(/[\s-]/g, ''))) {
-    return res.status(400).json({ ok: false, error: { code: 'INVALID_SENDER_PHONE', message: 'Enter a valid sender mobile number.' } });
-  }
+  // Kept only when it is a phone number (shown to staff in the admin panel).
+  const cleanSender = String(rawSenderPhone ?? '').replace(/[\s-]/g, '');
+  const senderPhone = /^\+?\d{10,15}$/.test(cleanSender) ? cleanSender : null;
 
   const amountMinor = Math.round(amount * 100);
   if (amountMinor < MIN_DEPOSIT_MINOR || amountMinor > MAX_DEPOSIT_MINOR) {
