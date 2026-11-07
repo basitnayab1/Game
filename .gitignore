@@ -52,3 +52,4 @@ Thumbs.db
 *.log
 npm-debug.log*
 tools/release-notes.log
+nginx/ssl/admin.htpasswd
