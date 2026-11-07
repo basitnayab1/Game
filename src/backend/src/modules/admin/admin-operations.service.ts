@@ -1,3 +1,4 @@
+import { SHOWN_PHONE } from './admin-display.js';
 import type { DatabaseClient } from '../../core/database/database.types.js';
 
 const KYC_STATUSES = new Set(['not_started','in_progress','verified','rejected','additional_information_required']);
@@ -27,10 +28,10 @@ export async function getAdminOverview(db: DatabaseClient) {
 export async function listAdminUsers(db: DatabaseClient, query?: string, status?: string) {
   const params: unknown[] = [];
   const clauses: string[] = [];
-  if (query?.trim()) { params.push(`%${query.trim()}%`); clauses.push(`(u.phone_e164 ILIKE $${params.length} OR COALESCE(up.username,'') ILIKE $${params.length} OR COALESCE(up.display_name,'') ILIKE $${params.length})`); }
+  if (query?.trim()) { params.push(`%${query.trim()}%`); clauses.push(`(${SHOWN_PHONE} ILIKE $${params.length} OR COALESCE(up.username,'') ILIKE $${params.length} OR COALESCE(NULLIF(up.display_name,u.phone_e164),'') ILIKE $${params.length})`); }
   if (status) { params.push(status); clauses.push(`u.status=$${params.length}`); }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
-  const r = await db.query(`SELECT u.id,u.phone_e164,u.status,u.created_at,u.updated_at,up.username,up.display_name,up.country_code,up.language_code,
+  const r = await db.query(`SELECT u.id,${SHOWN_PHONE} AS phone_e164,u.status,u.created_at,u.updated_at,up.username,NULLIF(up.display_name,u.phone_e164) AS display_name,up.country_code,up.language_code,
     COALESCE(k.status,'not_started') AS kyc_status,ks.metadata->>'documentNumber' AS cnic_number,ks.metadata->>'fullName' AS full_name,COALESCE(ks.metadata->>'documentType','id_card') AS document_type,ks.document_front,ks.document_back,
     (SELECT COUNT(*) FROM user_risk_flags rf WHERE rf.user_id=u.id AND rf.status='open')::int AS open_risk_flags,
     COALESCE(w.available_minor,0)::text AS available_minor, COALESCE(w.locked_minor,0)::text AS locked_minor
@@ -47,7 +48,7 @@ export async function listAdminUsers(db: DatabaseClient, query?: string, status?
 }
 
 export async function getAdminUser(db: DatabaseClient, userId: string) {
-  const u = await db.query(`SELECT u.id,u.phone_e164,u.date_of_birth,u.status,u.phone_verified_at,u.created_at,u.updated_at,up.username,up.display_name,up.country_code,up.language_code,
+  const u = await db.query(`SELECT u.id,${SHOWN_PHONE} AS phone_e164,u.date_of_birth,u.status,u.phone_verified_at,u.created_at,u.updated_at,up.username,NULLIF(up.display_name,u.phone_e164) AS display_name,up.country_code,up.language_code,
     COALESCE(k.status,'not_started') AS kyc_status,ks.metadata->>'documentNumber' AS cnic_number,ks.metadata->>'fullName' AS full_name,COALESCE(ks.metadata->>'documentType','id_card') AS document_type,ks.document_front,ks.document_back,k.verified_at
     FROM users u LEFT JOIN user_profiles up ON up.user_id=u.id LEFT JOIN kyc_profiles k ON k.user_id=u.id
     LEFT JOIN LATERAL (
@@ -124,7 +125,7 @@ export async function getSupportTicketAdmin(db: DatabaseClient, ticketId: string
 
 export async function listSupportTicketsAdmin(db: DatabaseClient, status?: string) {
   const params: unknown[] = []; const where = status ? `WHERE st.status=$1` : ''; if (status) params.push(status);
-  const r = await db.query(`SELECT st.id,st.user_id,st.category,st.status,st.subject,st.created_at,st.updated_at,COALESCE(up.username,up.display_name,u.phone_e164) AS user_label
+  const r = await db.query(`SELECT st.id,st.user_id,st.category,st.status,st.subject,st.created_at,st.updated_at,COALESCE(up.username,NULLIF(up.display_name,u.phone_e164),${SHOWN_PHONE}) AS user_label
     FROM support_tickets st JOIN users u ON u.id=st.user_id LEFT JOIN user_profiles up ON up.user_id=u.id ${where} ORDER BY st.updated_at DESC LIMIT 200`, params);
   return r.rows;
 }

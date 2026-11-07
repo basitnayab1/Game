@@ -1,3 +1,4 @@
+import { SHOWN_PHONE } from '../admin/admin-display.js';
 import type { DatabaseClient } from '../../core/database/database.types.js';
 
 /**
@@ -79,7 +80,7 @@ const rs = (minor: number) => `Rs ${(minor / 100).toLocaleString('en-US')}`;
 async function playerLabel(db: DatabaseClient, userId: string): Promise<string> {
   try {
     const r = (await db.query<{ phone_e164: string | null; display_name: string | null }>(
-      `SELECT u.phone_e164, p.display_name FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = $1`,
+      `SELECT ${SHOWN_PHONE} AS phone_e164, NULLIF(p.display_name, u.phone_e164) AS display_name FROM users u LEFT JOIN user_profiles p ON p.user_id = u.id WHERE u.id = $1`,
       [userId],
     )).rows[0];
     if (!r) return userId;

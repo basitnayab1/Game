@@ -1,3 +1,4 @@
+import { SHOWN_PHONE } from './admin-display.js';
 import { payDepositCommission } from '../referral/referral-rewards.js';
 import { notifyUser, rupees, withdrawalNetMinor } from '../notifications/notify.js';
 import type { Request, Response } from 'express';
@@ -29,7 +30,7 @@ export async function listAdminDeposits(req: Request, res: Response) {
       metadata: any;
     }>(
       `SELECT t.id AS "transactionId", d.id AS "depositId", t.user_id AS "userId",
-              u.phone_e164 AS "userPhone", t.amount_minor AS "amountMinor", t.currency,
+              ${SHOWN_PHONE} AS "userPhone", t.amount_minor AS "amountMinor", t.currency,
               t.status, d.method, d.provider_reference AS "trxId",
               d.verified_at AS "verifiedAt", t.created_at AS "createdAt", t.metadata
          FROM transactions t
@@ -266,7 +267,7 @@ export async function listAdminWithdrawals(req: Request, res: Response) {
       metadata: any;
     }>(
       `SELECT t.id AS "transactionId", w.id AS "withdrawalId", t.user_id AS "userId",
-              u.phone_e164 AS "userPhone", t.amount_minor AS "amountMinor",
+              ${SHOWN_PHONE} AS "userPhone", t.amount_minor AS "amountMinor",
               w.fee_minor AS "feeMinor", w.net_minor AS "netMinor",
               t.status, t.created_at AS "createdAt", t.metadata
          FROM transactions t

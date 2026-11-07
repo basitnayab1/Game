@@ -130,7 +130,7 @@ describe('Admin team and 2FA (PostgreSQL)', () => {
     expect((await call(refreshed.accessToken, 'GET', '/admin/overview')).status).toBe(200);
 
     const log = await call(refreshed.accessToken, 'GET', '/admin/audit');
-    expect(log.data.some((e: any) => e.action === 'admin.login' && e.actorPhone === owner.phone)).toBe(true);
+    expect(log.data.some((e: any) => e.action === 'admin.login' && e.actorUserId === owner.userId)).toBe(true);
   });
 
   it('locks 2FA after five wrong codes', async (ctx) => {
@@ -188,7 +188,7 @@ describe('Admin team and 2FA (PostgreSQL)', () => {
     expect((await call(m, 'GET', '/admin/me')).code).toBe('ADMIN_ACCESS_REQUIRED');
 
     const log = await call(o, 'GET', '/admin/audit');
-    const actions = log.data.filter((e: any) => e.actorPhone === owner.phone).map((e: any) => e.action);
+    const actions = log.data.filter((e: any) => e.actorUserId === owner.userId).map((e: any) => e.action);
     expect(actions).toEqual(expect.arrayContaining(['admin.team.add', 'admin.team.update', 'admin.team.reset_2fa']));
   });
 
@@ -216,5 +216,15 @@ describe('Admin team and 2FA (PostgreSQL)', () => {
 
     const team = await call(t, 'GET', '/admin/team');
     expect(team.data.find((m: any) => m.userId === owner.userId).username).toBe(username);
+
+    // An admin's phone number is never shown in the admin panel.
+    const ownerRow = team.data.find((m: any) => m.userId === owner.userId);
+    expect(ownerRow.phone).toBe(`@${username}`);
+    const players = await call(t, 'GET', '/admin/users');
+    const shown = JSON.stringify(players.json);
+    expect(shown).not.toContain(owner.phone);
+    expect((await call(t, 'GET', `/admin/users/${owner.userId}`)).json && JSON.stringify((await call(t, 'GET', `/admin/users/${owner.userId}`)).json)).not.toContain(owner.phone);
+    expect(JSON.stringify((await call(t, 'GET', '/admin/audit')).json)).not.toContain(owner.phone);
+    expect(JSON.stringify((await call(t, 'GET', '/admin/me')).json)).not.toContain(owner.phone);
   });
 });

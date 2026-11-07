@@ -1,3 +1,4 @@
+import { SHOWN_PHONE, shownPhoneSql } from './admin-display.js';
 import { Router, type Request, type Response } from 'express';
 import { z } from 'zod';
 import { requireAuth } from '../../middleware/auth.js';
@@ -40,7 +41,7 @@ export function createAdminTeamRouter(): Router {
   router.get('/me', ...guard, async (req: AdminRequest, res) => {
     const db = dbOf(req);
     const row = (await db.query<{ phone_e164: string | null; display_name: string | null; username: string | null; totp_enabled: boolean; session_verified: boolean }>(
-      `SELECT u.phone_e164, p.display_name, au.username, (au.totp_enabled_at IS NOT NULL) AS totp_enabled,
+      `SELECT ${SHOWN_PHONE} AS phone_e164, NULLIF(p.display_name, u.phone_e164) AS display_name, au.username, (au.totp_enabled_at IS NOT NULL) AS totp_enabled,
               EXISTS (SELECT 1 FROM user_sessions s WHERE s.id = $2::uuid AND s.admin_2fa_at IS NOT NULL) AS session_verified
          FROM admin_users au JOIN users u ON u.id = au.user_id
          LEFT JOIN user_profiles p ON p.user_id = u.id
@@ -82,7 +83,7 @@ export function createAdminTeamRouter(): Router {
   router.post('/2fa/setup', ...guard, async (req: AdminRequest, res) => {
     const db = dbOf(req);
     const row = (await db.query<{ totp_enabled_at: string | null; totp_secret_enc: string | null; phone_e164: string | null }>(
-      `SELECT au.totp_enabled_at, au.totp_secret_enc, u.phone_e164 FROM admin_users au JOIN users u ON u.id = au.user_id WHERE au.user_id = $1`,
+      `SELECT au.totp_enabled_at, au.totp_secret_enc, COALESCE(au.username, 'admin') AS phone_e164 FROM admin_users au JOIN users u ON u.id = au.user_id WHERE au.user_id = $1`,
       [req.admin!.userId],
     )).rows[0];
     if (row?.totp_enabled_at) return fail(res, 409, 'ADMIN_2FA_ALREADY_ENABLED', '2FA is already set up. Ask the Owner to reset it.');
@@ -163,7 +164,7 @@ export function createAdminTeamRouter(): Router {
 
   router.get('/team', ...guard, async (req, res) => {
     const rows = (await dbOf(req).query(
-      `SELECT au.user_id AS "userId", u.phone_e164 AS phone, p.display_name AS "displayName", au.username,
+      `SELECT au.user_id AS "userId", ${SHOWN_PHONE} AS phone, NULLIF(p.display_name, u.phone_e164) AS "displayName", au.username,
               ar.code AS role, au.status, (au.totp_enabled_at IS NOT NULL) AS "totpEnabled",
               au.created_at AS "addedAt",
               (SELECT max(created_at) FROM audit_events e WHERE e.actor_user_id = au.user_id) AS "lastActiveAt"
@@ -277,7 +278,7 @@ export function createAdminTeamRouter(): Router {
     const limit = Math.min(Math.max(Number(req.query.limit) || 200, 1), 500);
     const rows = (await dbOf(req).query(
       `SELECT e.created_at AS "createdAt", e.action, e.entity_type AS "entityType", e.entity_id AS "entityId",
-              e.metadata, u.phone_e164 AS "actorPhone", p.display_name AS "actorName"
+              e.metadata, ${shownPhoneSql('e.actor_user_id', 'u.phone_e164')} AS "actorPhone", NULLIF(p.display_name, u.phone_e164) AS "actorName", e.actor_user_id AS "actorUserId"
          FROM audit_events e
          LEFT JOIN users u ON u.id = e.actor_user_id
          LEFT JOIN user_profiles p ON p.user_id = e.actor_user_id
