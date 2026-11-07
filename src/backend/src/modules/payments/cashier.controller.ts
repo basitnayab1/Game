@@ -1,3 +1,4 @@
+import { alertDepositRequested, alertWithdrawalRequested } from '../notifications/admin-alerts.js';
 import { payDepositCommission } from '../referral/referral-rewards.js';
 import { notifyUser, rupees } from '../notifications/notify.js';
 import { DAILY_WITHDRAWAL_LIMIT_MINOR, MAX_DEPOSIT_MINOR, MIN_DEPOSIT_MINOR, withdrawalFeeMinor, withdrawalLimitError } from './withdrawal-fee.js';
@@ -253,6 +254,7 @@ export async function requestDeposit(req: Request, res: Response) {
       transactionId: txId,
     });
 
+    alertDepositRequested(db, userId, amountMinor, String(gateway).toLowerCase(), cleanTrx || null);
     return res.status(201).json(responsePayload);
   } catch (error: any) {
     await PaymentIdempotencyService.fail(db, {
@@ -470,6 +472,7 @@ export async function requestWithdrawal(req: Request, res: Response) {
       transactionId: result.transactionId,
     });
 
+    alertWithdrawalRequested(db, userId, result.amountMinor, result.netMinor, String(gateway), cleanPhone, cleanTitle || null);
     return res.status(201).json(responsePayload);
   } catch (error: any) {
     await PaymentIdempotencyService.fail(db, {

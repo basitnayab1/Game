@@ -5,6 +5,7 @@ import { normalizePhone } from '../auth/service.js';
 import type { DatabaseClient } from '../../core/database/database.types.js';
 import { adminTwoFactorRequired, requireAdmin } from './admin-access.middleware.js';
 import { ROLE_LABELS } from './admin-permissions.js';
+import { alertAdminEvent } from '../notifications/admin-alerts.js';
 import { decryptSecret, encryptSecret, generateSecret, matchStep, otpauthUri } from './totp.js';
 
 /**
@@ -84,6 +85,7 @@ export function createAdminTeamRouter(): Router {
     const code = String(req.body?.code ?? '');
     const db = dbOf(req);
     const userId = req.admin!.userId;
+    let lockedNow = false;
     const outcome = await db.transaction(async (tx) => {
       const row = (await tx.query<{ totp_secret_enc: string | null; totp_enabled_at: string | null; totp_last_step: string | null; totp_failed_count: number; locked: boolean }>(
         `SELECT totp_secret_enc, totp_enabled_at, totp_last_step, totp_failed_count,
@@ -102,6 +104,7 @@ export function createAdminTeamRouter(): Router {
         // Five wrong codes lock 2FA for LOCK_MINUTES, then the count starts over.
         const failed = row.totp_failed_count + 1;
         if (failed >= MAX_FAILED_CODES) {
+          lockedNow = true;
           await tx.query(
             `UPDATE admin_users SET totp_failed_count = 0, totp_locked_until = now() + ($2::text || ' minutes')::interval WHERE user_id = $1`,
             [userId, String(LOCK_MINUTES)],
@@ -122,9 +125,15 @@ export function createAdminTeamRouter(): Router {
     });
     if (outcome) {
       await audit(db, userId, mode === 'enable' ? 'admin.2fa.enable_failed' : 'admin.login.2fa_failed', userId, { code: outcome.code });
+      if (lockedNow) {
+        alertAdminEvent(db, userId, 'Admin 2FA locked after 5 wrong codes', [['IP', req.ip], ['Note', 'Someone may have this admin password.']]);
+      }
       return fail(res, outcome.status, outcome.code, outcome.message);
     }
     await audit(db, userId, mode === 'enable' ? 'admin.2fa.enable' : 'admin.login', userId, {});
+    alertAdminEvent(db, userId, mode === 'enable' ? 'Admin set up 2FA and signed in' : 'Admin signed in', [
+      ['Role', req.admin!.role], ['IP', req.ip], ['Browser', String(req.headers['user-agent'] ?? '').slice(0, 120)],
+    ]);
     res.json({ ok: true, data: { verified: true } });
   }
 
@@ -176,6 +185,7 @@ export function createAdminTeamRouter(): Router {
       throw err;
     }
     await audit(db, req.admin!.userId, 'admin.team.add', user.id, { phone, role: parsed.data.role });
+    alertAdminEvent(db, req.admin!.userId, 'Team member added', [['New member', phone], ['Role', parsed.data.role]]);
     res.status(201).json({ ok: true, data: { userId: user.id, phone, role: parsed.data.role } });
   });
 
@@ -222,6 +232,7 @@ export function createAdminTeamRouter(): Router {
       await db.query(`UPDATE user_sessions SET admin_2fa_at = NULL WHERE user_id = $1`, [userId]);
     }
     await audit(db, req.admin!.userId, 'admin.team.update', userId, parsed.data);
+    alertAdminEvent(db, req.admin!.userId, 'Team member changed', [['Member', userId], ['Change', JSON.stringify(parsed.data)]]);
     res.json({ ok: true, data: { userId, ...parsed.data } });
   });
 
@@ -237,6 +248,7 @@ export function createAdminTeamRouter(): Router {
     );
     await db.query(`UPDATE user_sessions SET admin_2fa_at = NULL WHERE user_id = $1`, [userId]);
     await audit(db, req.admin!.userId, 'admin.team.reset_2fa', userId, {});
+    alertAdminEvent(db, req.admin!.userId, 'Team member 2FA reset', [['Member', userId]]);
     res.json({ ok: true, data: { userId } });
   });
 

@@ -57,6 +57,11 @@ services:
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET environment variable is required}
       # Encrypts admin 2FA secrets; falls back to JWT_ACCESS_SECRET when unset.
       ADMIN_TOTP_KEY: ${ADMIN_TOTP_KEY:-}
+      # Email alerts to the operator (Resend). Empty = no alerts.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      ADMIN_ALERT_EMAIL: ${ADMIN_ALERT_EMAIL:-}
+      ALERT_FROM_EMAIL: ${ALERT_FROM_EMAIL:-N5 Alerts <no-reply@n5gamez.com>}
+      LARGE_WITHDRAWAL_RS: ${LARGE_WITHDRAWAL_RS:-50000}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET environment variable is required}
       CORS_ORIGIN: ${CORS_ORIGIN:-https://n5game.com,https://admin.n5game.com}
       API_PREFIX: /api/v1
