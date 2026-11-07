@@ -8,7 +8,8 @@ import type {DatabaseClient} from '../../core/database/database.types.js';
 export const authRouter = Router();
 const authLimiter = createSensitiveRateLimiter(60_000, 10);
 const register = z.object({phone: z.string().min(7).max(20), dob: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), password: z.string().min(8).max(128), referralCode: z.string().max(64).optional(), countryCode: z.string().length(2).optional()});
-const login = z.object({phone: z.string().min(7), password: z.string().min(8)});
+// `phone` also accepts an admin username.
+const login = z.object({phone: z.string().trim().min(4).max(32), password: z.string().min(8)});
 
 function database(req: Request, res: Response): DatabaseClient | null {
   const db = (req.app.locals as { db?: DatabaseClient }).db;

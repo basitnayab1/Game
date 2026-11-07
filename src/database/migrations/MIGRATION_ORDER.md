@@ -45,3 +45,4 @@ Migration filenames are unique and sequential (001 to 034) before first producti
 041 VIP targets and salary (deposit/betting required per level, daily salary claims)
 042 referral rewards (Rs 400 qualification reward and 0.5% deposit commission to the inviter)
 043 admin team and 2FA (finance/support roles, authenticator codes, up to 10 active admins)
+044 admin usernames (admins can sign in with a username)

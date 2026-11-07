@@ -17,6 +17,7 @@ import { decryptSecret, encryptSecret, generateSecret, matchStep, otpauthUri } f
 const MAX_FAILED_CODES = 5;
 const LOCK_MINUTES = 15;
 const TEAM_ROLES = ['admin', 'finance', 'support'] as const;
+const USERNAME = /^[a-z][a-z0-9_.]{3,31}$/;
 
 type AdminRequest = Request & { admin?: { userId: string; role: string }; auth?: { userId: string; sessionId: string } };
 
@@ -38,8 +39,8 @@ export function createAdminTeamRouter(): Router {
 
   router.get('/me', ...guard, async (req: AdminRequest, res) => {
     const db = dbOf(req);
-    const row = (await db.query<{ phone_e164: string | null; display_name: string | null; totp_enabled: boolean; session_verified: boolean }>(
-      `SELECT u.phone_e164, p.display_name, (au.totp_enabled_at IS NOT NULL) AS totp_enabled,
+    const row = (await db.query<{ phone_e164: string | null; display_name: string | null; username: string | null; totp_enabled: boolean; session_verified: boolean }>(
+      `SELECT u.phone_e164, p.display_name, au.username, (au.totp_enabled_at IS NOT NULL) AS totp_enabled,
               EXISTS (SELECT 1 FROM user_sessions s WHERE s.id = $2::uuid AND s.admin_2fa_at IS NOT NULL) AS session_verified
          FROM admin_users au JOIN users u ON u.id = au.user_id
          LEFT JOIN user_profiles p ON p.user_id = u.id
@@ -50,12 +51,30 @@ export function createAdminTeamRouter(): Router {
       userId: req.admin!.userId,
       phone: row?.phone_e164 ?? null,
       displayName: row?.display_name ?? null,
+      username: row?.username ?? null,
       role: req.admin!.role,
       roleLabel: ROLE_LABELS[req.admin!.role] ?? req.admin!.role,
       totpEnabled: row?.totp_enabled === true,
       sessionVerified: row?.session_verified === true,
       twoFactorRequired: adminTwoFactorRequired(),
     } });
+  });
+
+  /** Sets the signed-in admin's username (used to sign in instead of the phone). */
+  router.patch('/me/username', ...guard, async (req: AdminRequest, res) => {
+    const username = String(req.body?.username ?? '').trim().toLowerCase();
+    if (!USERNAME.test(username)) {
+      return fail(res, 400, 'INVALID_USERNAME', 'Use 4-32 characters: letters, numbers, dot or underscore, starting with a letter.');
+    }
+    const db = dbOf(req);
+    try {
+      await db.query(`UPDATE admin_users SET username = $2, updated_at = now() WHERE user_id = $1`, [req.admin!.userId, username]);
+    } catch (err) {
+      if ((err as { code?: string }).code === '23505') return fail(res, 409, 'USERNAME_TAKEN', 'This username is already taken.');
+      throw err;
+    }
+    await audit(db, req.admin!.userId, 'admin.username.change', req.admin!.userId, { username });
+    res.json({ ok: true, data: { username } });
   });
 
   // ---- 2FA -------------------------------------------------------------
@@ -144,7 +163,7 @@ export function createAdminTeamRouter(): Router {
 
   router.get('/team', ...guard, async (req, res) => {
     const rows = (await dbOf(req).query(
-      `SELECT au.user_id AS "userId", u.phone_e164 AS phone, p.display_name AS "displayName",
+      `SELECT au.user_id AS "userId", u.phone_e164 AS phone, p.display_name AS "displayName", au.username,
               ar.code AS role, au.status, (au.totp_enabled_at IS NOT NULL) AS "totpEnabled",
               au.created_at AS "addedAt",
               (SELECT max(created_at) FROM audit_events e WHERE e.actor_user_id = au.user_id) AS "lastActiveAt"

@@ -124,11 +124,17 @@ type LoginRow = { id: string; password_hash: string; status: string; failed_logi
 export async function login(phone: string, password: string, db: DatabaseClient) {
   const outcome = await db.transaction(async (tx) => {
     // The row lock serialises attempts on one account, so parallel guesses cannot skip the counter.
+    // Admins may sign in with their username; everyone else with the phone number.
+    const byUsername = /[a-z]/i.test(phone);
     const user = (await tx.query<LoginRow>(
       `SELECT id, password_hash, status, failed_login_count,
               GREATEST(0, CEIL(EXTRACT(EPOCH FROM (login_locked_until - now()))))::int AS lock_seconds
-         FROM users WHERE phone_e164 = $1 FOR UPDATE`,
-      [normalizePhone(phone)],
+         FROM users
+        WHERE ${byUsername
+          ? `id = (SELECT user_id FROM admin_users WHERE lower(username) = lower($1))`
+          : `phone_e164 = $1`}
+        FOR UPDATE`,
+      [byUsername ? phone.trim() : normalizePhone(phone)],
     )).rows[0];
 
     if (!user) {

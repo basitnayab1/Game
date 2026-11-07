@@ -191,4 +191,30 @@ describe('Admin team and 2FA (PostgreSQL)', () => {
     const actions = log.data.filter((e: any) => e.actorPhone === owner.phone).map((e: any) => e.action);
     expect(actions).toEqual(expect.arrayContaining(['admin.team.add', 'admin.team.update', 'admin.team.reset_2fa']));
   });
+
+  it('lets an admin set a username and sign in with it', async (ctx) => {
+    if (!db) return ctx.skip();
+    const owner = await makeOwner();
+    const { session } = await signInWithNewTotp(owner.phone);
+    const t = session.accessToken;
+    const username = `owner${crypto.randomInt(100000, 999999)}`;
+
+    expect((await call(t, 'PATCH', '/admin/me/username', { username: '1bad name' })).code).toBe('INVALID_USERNAME');
+    expect((await call(t, 'PATCH', '/admin/me/username', { username: username.toUpperCase() })).data.username).toBe(username);
+    expect((await call(t, 'GET', '/admin/me')).data.username).toBe(username);
+
+    // Signing in with the username (any case) works; a wrong password still counts.
+    const viaName = await auth.login(username.toUpperCase(), PASSWORD, db);
+    expect(viaName.user.id).toBe(owner.userId);
+    await expect(auth.login(username, 'Wrong-Password-1', db)).rejects.toThrow();
+    await expect(auth.login('nosuchadmin', PASSWORD, db)).rejects.toThrow();
+
+    // Usernames are unique.
+    const other = await makeOwner();
+    const { session: s2 } = await signInWithNewTotp(other.phone);
+    expect((await call(s2.accessToken, 'PATCH', '/admin/me/username', { username })).code).toBe('USERNAME_TAKEN');
+
+    const team = await call(t, 'GET', '/admin/team');
+    expect(team.data.find((m: any) => m.userId === owner.userId).username).toBe(username);
+  });
 });

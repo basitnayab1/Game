@@ -16,7 +16,7 @@ type Rule = { method: string; path: RegExp };
 const r = (method: string, path: string): Rule => ({ method, path: new RegExp(`^${path}$`) });
 
 const ID = '[^/]+';
-const EVERY_ADMIN: Rule[] = [r('GET', '/me'), r('POST', `/2fa/${ID}`), r('GET', '/overview'), r('GET', '/users'), r('GET', `/users/${ID}`)];
+const EVERY_ADMIN: Rule[] = [r('GET', '/me'), r('PATCH', '/me/username'), r('POST', `/2fa/${ID}`), r('GET', '/overview'), r('GET', '/users'), r('GET', `/users/${ID}`)];
 
 const ROLE_RULES: Record<string, Rule[]> = {
   finance: [
